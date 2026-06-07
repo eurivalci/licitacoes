@@ -1,651 +1,1359 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PNCP — Consulta de Licitações Públicas</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Painel Nacional de Compras e Licitações Públicas — dados oficiais do PNCP por município." />
+<title>Painel de Licitações &amp; Contas Públicas — PNCP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --blue:#1351B4;--blue-d:#0C3D8A;--blue-l:#E8F0FB;--blue-xl:#F0F5FF;
-  --yellow:#FFCD07;--gov-dark:#071D41;
-  --green:#16A34A;--green-bg:#DCFCE7;--green-t:#14532D;
-  --amber-bg:#FEF3C7;--amber-t:#92400E;
-  --red-bg:#FEE2E2;--red-t:#991B1B;
-  --gray-bg:#F3F4F6;--gray-t:#374151;
-  --purple-bg:#EDE9FE;--purple-t:#5B21B6;
-  --surf:#fff;--surf2:#F7F8FA;--surf3:#EFF1F5;
-  --bdr:rgba(0,0,0,.09);--bdr2:rgba(0,0,0,.16);
-  --txt:#1A1D23;--txt2:#4B5563;--txt3:#8C93A0;
-  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
-  --sh-sm:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
-  --sh-md:0 4px 16px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.05);
-  --sh-lg:0 10px 40px rgba(0,0,0,.14),0 4px 16px rgba(0,0,0,.08);
-}
-body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--surf2);color:var(--txt);min-height:100vh;font-size:15px;line-height:1.6}
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root {
+    --bg: #080b12;
+    --bg-2: #0b1020;
+    --surface: rgba(255, 255, 255, 0.035);
+    --surface-2: rgba(255, 255, 255, 0.06);
+    --surface-hover: rgba(255, 255, 255, 0.09);
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #e9eef7;
+    --text-dim: #aab4c6;
+    --muted: #6b7689;
+    --accent: #2dd4bf;
+    --accent-2: #38bdf8;
+    --accent-soft: rgba(45, 212, 191, 0.14);
+    --gold: #f5c451;
+    --green: #34d399;
+    --amber: #fb9b3a;
+    --red: #f8716a;
+    --violet: #a78bfa;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.85);
+    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --maxw: 1240px;
+  }
 
-/* ─── HEADER ─────────────────────────────── */
-.site-header{background:var(--blue);position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.gov-bar{background:var(--gov-dark);padding:4px 24px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.02em}
-.header-inner{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;max-width:1200px;margin:0 auto;gap:12px}
-.header-brand{display:flex;align-items:center;gap:13px}
-.logo-box{width:42px;height:42px;background:var(--yellow);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:var(--gov-dark);letter-spacing:.03em;line-height:1.15;text-align:center;flex-shrink:0}
-.brand-text h1{font-size:15px;font-weight:600;color:#fff;line-height:1.2}
-.brand-text p{font-size:11.5px;color:rgba(255,255,255,.6);margin-top:1px}
-.vercel-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:12px;color:rgba(255,255,255,.85);white-space:nowrap}
-.vpill-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ─── LAYOUT ─────────────────────────────── */
-.main{max-width:1200px;margin:0 auto;padding:28px 24px 64px}
+  html { scroll-behavior: smooth; }
 
-/* ─── DASHBOARD ──────────────────────────── */
-.dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
-.dash-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
-.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--blue))}
-.dash-card.accent-green{--accent:#16A34A}
-.dash-card.accent-amber{--accent:#F59E0B}
-.dash-card.accent-purple{--accent:#7C3AED}
-.dash-icon{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;background:var(--blue-l);margin-bottom:4px}
-.dash-icon svg{width:18px;height:18px;color:var(--blue)}
-.dash-card.accent-green .dash-icon{background:var(--green-bg)}.dash-card.accent-green .dash-icon svg{color:#16A34A}
-.dash-card.accent-amber .dash-icon{background:#FEF3C7}.dash-card.accent-amber .dash-icon svg{color:#D97706}
-.dash-card.accent-purple .dash-icon{background:var(--purple-bg)}.dash-card.accent-purple .dash-icon svg{color:#7C3AED}
-.dash-label{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em}
-.dash-value{font-size:26px;font-weight:600;color:var(--txt);font-family:'IBM Plex Mono',monospace;line-height:1.1}
-.dash-sub{font-size:12px;color:var(--txt3);margin-top:1px}
-.dash-bullets{margin-top:10px;display:flex;flex-direction:column;gap:5px}
-.dash-bullet{font-size:12px;color:var(--txt2);display:flex;align-items:flex-start;gap:7px;line-height:1.45}
-.dash-bullet::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent,var(--blue));flex-shrink:0;margin-top:5px}
-.dash-insight{grid-column:1/-1;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-d) 100%);border-radius:var(--r-lg);padding:20px 24px;box-shadow:var(--sh-sm)}
-.dash-insight h3{font-size:12px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
-.insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.insight-item{background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:12px 14px}
-.i-label{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:3px}
-.i-val{font-size:18px;font-weight:600;color:#fff;font-family:'IBM Plex Mono',monospace}
-.i-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+  }
 
-/* ─── SEARCH PANEL ───────────────────────── */
-.search-panel{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:20px;box-shadow:var(--sh-sm)}
-.sp-title{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
-.search-row{display:flex;gap:10px;margin-bottom:14px}
-.search-wrap{flex:1;position:relative}
-.search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--txt3);width:18px;height:18px;pointer-events:none}
-#searchInput{width:100%;padding:10px 14px 10px 42px;border:1px solid var(--bdr2);border-radius:var(--r-md);font-size:15px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none;transition:border-color .15s,box-shadow .15s}
-#searchInput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(19,81,180,.12)}
-#searchInput::placeholder{color:var(--txt3)}
-.btn-search{padding:10px 22px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-md);font-size:15px;font-family:inherit;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}
-.btn-search:hover{background:var(--blue-d)}
-.btn-search svg{width:16px;height:16px}
-.filters-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
-.filter-group{display:flex;flex-direction:column;gap:3px;min-width:155px}
-.filter-group label{font-size:11px;font-weight:500;color:var(--txt3);letter-spacing:.04em}
-.filter-group select{padding:7px 30px 7px 11px;border:1px solid var(--bdr2);border-radius:var(--r-sm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--txt);cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s}
-.filter-group select:focus{border-color:var(--blue)}
-.filter-group select:disabled{opacity:.45;cursor:not-allowed}
+  /* Animated gradient mesh + grain atmosphere */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -20% -20% auto -20%;
+    height: 80vh;
+    z-index: 0;
+    background:
+      radial-gradient(60% 50% at 18% 8%, rgba(45, 212, 191, 0.18), transparent 60%),
+      radial-gradient(55% 45% at 85% 4%, rgba(56, 189, 248, 0.16), transparent 60%),
+      radial-gradient(50% 60% at 60% 30%, rgba(167, 139, 250, 0.10), transparent 65%);
+    filter: blur(20px);
+    animation: drift 22s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.04;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  @keyframes drift {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    100% { transform: translate3d(-3%, 2%, 0) scale(1.08); }
+  }
 
-/* ─── RESULTS BAR ────────────────────────── */
-.results-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.results-count{font-size:14px;color:var(--txt2)}
-.results-count strong{color:var(--txt);font-weight:600}
+  .wrap { position: relative; z-index: 1; max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
 
-/* ─── STATE BOXES ────────────────────────── */
-.state-box{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:48px 32px;text-align:center;color:var(--txt3)}
-.state-box svg{width:40px;height:40px;margin:0 auto 12px;opacity:.3;display:block}
-.state-box p{font-size:15px}
-.state-box small{font-size:13px;display:block;margin-top:5px;opacity:.7}
-.loading-spinner{width:28px;height:28px;border:3px solid var(--bdr2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  select, input { font-family: inherit; }
 
-/* ─── CARDS ──────────────────────────────── */
-.cards-list{display:flex;flex-direction:column;gap:11px}
-.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:18px 22px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s;position:relative}
-.card:hover{border-color:var(--blue);box-shadow:var(--sh-md);transform:translateY(-1px)}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
-.card-title{font-size:14.5px;font-weight:500;color:var(--txt);line-height:1.5;flex:1}
-.badge{flex-shrink:0;font-size:11px;font-weight:500;padding:3px 11px;border-radius:20px;white-space:nowrap}
-.b-open{background:var(--green-bg);color:var(--green-t)}
-.b-judge{background:var(--amber-bg);color:var(--amber-t)}
-.b-closed{background:var(--gray-bg);color:var(--gray-t)}
-.b-purple{background:var(--purple-bg);color:var(--purple-t)}
-.b-red{background:var(--red-bg);color:var(--red-t)}
-.card-meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
-.mi{font-size:12.5px;color:var(--txt2);display:flex;align-items:center;gap:5px}
-.mi svg{width:13px;height:13px;flex-shrink:0;opacity:.55}
-.card-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--bdr)}
-.card-org{font-size:12.5px;color:var(--txt3);display:flex;align-items:center;gap:5px;flex:1;min-width:0}
-.card-org svg{width:12px;height:12px;flex-shrink:0}
-.card-org span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card-value{font-size:13.5px;font-weight:600;color:var(--blue);font-family:'IBM Plex Mono',monospace;flex-shrink:0}
-.card-arr{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--txt3);opacity:0;transition:opacity .15s}
-.card:hover .card-arr{opacity:1}
-.card-arr svg{width:17px;height:17px}
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  header.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    backdrop-filter: blur(16px);
+    background: linear-gradient(180deg, rgba(8, 11, 18, 0.92), rgba(8, 11, 18, 0.6));
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 22px; max-width: var(--maxw); margin: 0 auto;
+  }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .brand .mark {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: grid; place-items: center;
+    background: linear-gradient(140deg, var(--accent), var(--accent-2));
+    box-shadow: 0 8px 24px -8px rgba(45, 212, 191, 0.6);
+    color: #04141a; flex-shrink: 0;
+  }
+  .brand h1 {
+    font-family: var(--font-display); font-size: 1.06rem; font-weight: 800;
+    letter-spacing: -0.02em; line-height: 1.1;
+  }
+  .brand p { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  .topbar-spacer { flex: 1; }
+  .src-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-dim);
+    padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface); white-space: nowrap;
+  }
+  .src-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+  .src-dot.live { background: var(--green); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.18); }
+  .src-dot.warn { background: var(--amber); box-shadow: 0 0 0 4px rgba(251, 155, 58, 0.18); }
+  .src-dot.err { background: var(--red); box-shadow: 0 0 0 4px rgba(248, 113, 106, 0.18); }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-dim);
+    transition: 0.18s;
+  }
+  .icon-btn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-strong); }
 
-/* ─── PAGINATION ─────────────────────────── */
-.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:26px}
-.pg-btn{padding:7px 16px;border:1px solid var(--bdr2);border-radius:var(--r-md);background:var(--surf);color:var(--txt);font-size:14px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .12s,border-color .12s}
-.pg-btn:hover:not(:disabled){background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
-.pg-btn:disabled{opacity:.35;cursor:default}
-.pg-btn svg{width:14px;height:14px}
-.pg-info{font-size:14px;color:var(--txt2);padding:0 8px}
-.pg-info strong{color:var(--txt)}
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero { padding: 54px 0 26px; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin-bottom: 18px;
+    padding: 6px 13px; border-radius: 999px; border: 1px solid var(--accent-soft);
+    background: var(--accent-soft);
+  }
+  .hero h2 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(2rem, 5.2vw, 3.4rem); line-height: 1.02;
+    letter-spacing: -0.035em; max-width: 18ch; margin-bottom: 16px;
+  }
+  .hero h2 .grad {
+    background: linear-gradient(120deg, var(--accent), var(--accent-2) 60%, var(--violet));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p.lede { color: var(--text-dim); font-size: 1.04rem; max-width: 60ch; }
 
-/* ─── MODAL ──────────────────────────────── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(7,29,65,.52);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px}
-.overlay.open{display:flex}
-.modal{background:var(--surf);border-radius:var(--r-xl);width:100%;max-width:680px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh-lg);animation:mIn .18s ease-out}
-@keyframes mIn{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+  /* KPI bullet grid */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 36px;
+  }
+  .kpi {
+    position: relative; padding: 22px 20px 20px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface);
+    overflow: hidden; opacity: 0; transform: translateY(14px);
+    animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .kpi::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)); opacity: 0.85;
+  }
+  .kpi:nth-child(2)::before { background: linear-gradient(90deg, var(--gold), var(--amber)); }
+  .kpi:nth-child(3)::before { background: linear-gradient(90deg, var(--violet), var(--accent-2)); }
+  .kpi:nth-child(4)::before { background: linear-gradient(90deg, var(--green), var(--accent)); }
+  .kpi:nth-child(1) { animation-delay: 0.05s; }
+  .kpi:nth-child(2) { animation-delay: 0.12s; }
+  .kpi:nth-child(3) { animation-delay: 0.19s; }
+  .kpi:nth-child(4) { animation-delay: 0.26s; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  .kpi .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .kpi .kpi-ico {
+    width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--surface-2); color: var(--accent);
+  }
+  .kpi:nth-child(2) .kpi-ico { color: var(--gold); }
+  .kpi:nth-child(3) .kpi-ico { color: var(--violet); }
+  .kpi:nth-child(4) .kpi-ico { color: var(--green); }
+  .kpi .kpi-tag { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .kpi .kpi-val {
+    font-family: var(--font-display); font-weight: 800; font-size: 2rem;
+    letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .kpi .kpi-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 8px; }
+  .kpi.loading .kpi-val { color: var(--muted); }
+  .skeleton {
+    display: inline-block; height: 1.6rem; width: 90px; border-radius: 7px;
+    background: linear-gradient(90deg, var(--surface-2), var(--surface-hover), var(--surface-2));
+    background-size: 200% 100%; animation: shimmer 1.3s linear infinite; vertical-align: middle;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
 
-/* status timeline */
-.modal-timeline{display:flex;align-items:flex-start;padding:20px 26px 0;flex-shrink:0;overflow-x:auto;gap:0}
-.tl-step{display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px;position:relative}
-.tl-step:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--bdr2);z-index:0}
-.tl-step.done:not(:last-child)::after{background:var(--blue)}
-.tl-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bdr2);background:var(--surf2);z-index:1;position:relative;transition:all .2s}
-.tl-icon svg{width:16px;height:16px;color:var(--txt3)}
-.tl-step.done .tl-icon{background:var(--blue-l);border-color:var(--blue)}.tl-step.done .tl-icon svg{color:var(--blue)}
-.tl-step.active .tl-icon{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 4px rgba(19,81,180,.18)}.tl-step.active .tl-icon svg{color:#fff}
-.tl-step.error .tl-icon{background:var(--red-bg);border-color:#EF4444}.tl-step.error .tl-icon svg{color:#DC2626}
-.tl-label{font-size:10px;color:var(--txt3);text-align:center;margin-top:6px;line-height:1.3;max-width:66px}
-.tl-step.done .tl-label{color:var(--blue);font-weight:500}
-.tl-step.active .tl-label{color:var(--blue);font-weight:600}
+  /* region mini-bars */
+  .region-row { display: flex; gap: 18px; margin-top: 30px; flex-wrap: wrap; }
+  .region-card {
+    flex: 1; min-width: 150px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px 16px; background: var(--surface);
+  }
+  .region-card .rc-name { font-size: 0.78rem; color: var(--text-dim); display: flex; justify-content: space-between; }
+  .region-card .rc-num { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; margin: 6px 0 9px; }
+  .rc-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .rc-bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); }
 
-.modal-header{padding:18px 26px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-shrink:0}
-.mh-left{flex:1}
-.m-eyebrow{font-size:11px;color:var(--blue);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
-.m-title{font-size:16.5px;font-weight:600;color:var(--txt);line-height:1.45}
-.modal-close{background:var(--surf3);border:none;cursor:pointer;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--txt2);flex-shrink:0;transition:background .12s}
-.modal-close:hover{background:var(--surf2);color:var(--txt)}
-.modal-close svg{width:18px;height:18px}
-.modal-badges{display:flex;gap:7px;flex-wrap:wrap;padding:12px 26px;border-bottom:1px solid var(--bdr);flex-shrink:0}
-.tag{font-size:12px;padding:3px 11px;background:var(--surf3);border:1px solid var(--bdr);border-radius:20px;color:var(--txt2)}
-.modal-body{overflow-y:auto;padding:20px 26px;flex:1}
+  /* ============================================================
+     SEARCH PANEL
+     ============================================================ */
+  .panel {
+    margin-top: 44px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    padding: 24px; box-shadow: var(--shadow); scroll-margin-top: 90px;
+  }
+  .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .panel-head .ph-ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+  .panel-head h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+  .panel-head span { font-size: 0.82rem; color: var(--muted); }
 
-.isec{margin-bottom:20px}
-.isec-title{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--bdr)}
-.igrid{display:grid;grid-template-columns:1fr 1fr;gap:13px 22px}
-.ii label{font-size:10.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:3px}
-.ii p{font-size:13.5px;color:var(--txt)}
-.ii.full{grid-column:1/-1}
-.obj-box{font-size:13.5px;color:var(--txt2);line-height:1.65;padding:13px;background:var(--surf2);border-radius:var(--r-md);border:1px solid var(--bdr)}
-.val-big{font-size:21px;font-weight:600;color:var(--blue);font-family:'IBM Plex Mono',monospace}
-.bullets-list{display:flex;flex-direction:column;gap:7px;margin-top:2px}
-.bl-item{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--txt2);line-height:1.5}
-.bl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
-.bl-dot.blue{background:var(--blue)}.bl-dot.green{background:#16A34A}.bl-dot.amber{background:#F59E0B}.bl-dot.red{background:#EF4444}.bl-dot.purple{background:#7C3AED}
+  .filters { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; align-items: end; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field.c3 { grid-column: span 3; }
+  .field.c2 { grid-column: span 2; }
+  .field.c4 { grid-column: span 4; }
+  .field.c12 { grid-column: span 12; }
+  .field label { font-size: 0.74rem; color: var(--text-dim); font-weight: 600; letter-spacing: 0.02em; }
+  .ctrl {
+    appearance: none; -webkit-appearance: none;
+    background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+    padding: 12px 14px; border-radius: var(--radius-sm); font-size: 0.92rem; width: 100%;
+    transition: 0.16s;
+  }
+  select.ctrl {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%236b7689' stroke-width='2'%3E%3Cpath d='M2 5l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
+  }
+  .ctrl:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .ctrl:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    grid-column: span 2;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #042;
+    font-weight: 700; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 0.92rem;
+    transition: 0.18s; box-shadow: 0 10px 26px -12px rgba(45, 212, 191, 0.7);
+  }
+  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .btn-primary:disabled { opacity: 0.55; cursor: progress; transform: none; }
 
-.modal-footer{padding:15px 26px;border-top:1px solid var(--bdr);display:flex;gap:9px;flex-shrink:0;background:var(--surf2)}
-.btn-primary{padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-md);font-size:13.5px;font-family:inherit;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none;transition:background .12s}
-.btn-primary:hover{background:var(--blue-d)}
-.btn-primary svg{width:14px;height:14px}
-.btn-sec{padding:9px 18px;background:var(--surf);color:var(--txt2);border:1px solid var(--bdr2);border-radius:var(--r-md);font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .12s}
-.btn-sec:hover{background:var(--surf3)}
-.btn-sec svg{width:14px;height:14px}
+  /* ============================================================
+     RESULTS
+     ============================================================ */
+  .results { margin: 32px 0 80px; }
+  .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+  .results-bar h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; }
+  .results-bar h3 small { color: var(--muted); font-weight: 500; font-size: 0.85rem; font-family: var(--font-body); }
+  .summary-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 0.78rem;
+    padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    font-family: var(--font-mono); color: var(--text-dim);
+  }
+  .chip b { color: var(--text); font-weight: 600; }
 
-/* ─── RESPONSIVE ─────────────────────────── */
-@media(max-width:900px){.dashboard{grid-template-columns:1fr 1fr}.insight-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:640px){
-  .main{padding:16px 14px 48px}
-  .search-panel{padding:16px}
-  .search-row{flex-direction:column}
-  .dashboard{grid-template-columns:1fr 1fr}
-  .insight-grid{grid-template-columns:1fr}
-  .card{padding:14px 16px}
-  .card-top{flex-direction:column;gap:7px}
-  .card-arr{display:none}
-  .igrid{grid-template-columns:1fr}
-  .modal-header,.modal-body,.modal-footer,.modal-badges,.modal-timeline{padding-left:16px;padding-right:16px}
-  .vercel-pill{display:none}
-  .filters-row{gap:8px}
-  .filter-group{min-width:140px}
-}
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .lic-card {
+    position: relative; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); padding: 18px; cursor: pointer; transition: 0.2s; overflow: hidden;
+    display: flex; flex-direction: column; gap: 13px;
+    opacity: 0; animation: rise 0.5s ease forwards;
+  }
+  .lic-card:hover { border-color: var(--border-strong); background: var(--surface-2); transform: translateY(-3px); box-shadow: var(--shadow); }
+  .lic-card-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+  .badge {
+    font-size: 0.68rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+    letter-spacing: 0.03em; white-space: nowrap; border: 1px solid transparent;
+  }
+  .badge.b-mod { background: var(--accent-soft); color: var(--accent); border-color: rgba(45,212,191,0.3); }
+  .st-tag { font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .st-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .st-1 { color: var(--accent-2); } .st-1 .st-dot { background: var(--accent-2); }
+  .st-2 { color: var(--red); } .st-2 .st-dot { background: var(--red); }
+  .st-3 { color: var(--red); } .st-3 .st-dot { background: var(--red); }
+  .st-4 { color: var(--amber); } .st-4 .st-dot { background: var(--amber); }
+  .st-done { color: var(--green); } .st-done .st-dot { background: var(--green); }
+  .lic-obj { font-size: 0.95rem; line-height: 1.4; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .lic-meta { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--text-dim); }
+  .lic-meta .lm-row { display: flex; align-items: center; gap: 8px; }
+  .lic-meta svg { flex-shrink: 0; opacity: 0.7; }
+  .lic-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+  .lic-val { font-family: var(--font-mono); font-weight: 600; }
+  .lic-val .lv-label { font-size: 0.66rem; color: var(--muted); display: block; text-transform: uppercase; letter-spacing: 0.06em; }
+  .lic-val .lv-num { font-size: 1.02rem; color: var(--gold); }
+  .lic-open { font-size: 0.78rem; color: var(--accent); display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+
+  /* states */
+  .state-box { text-align: center; padding: 70px 24px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--surface); }
+  .state-box .sb-ico { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; margin: 0 auto 18px; background: var(--surface-2); color: var(--muted); }
+  .state-box h4 { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin-bottom: 8px; }
+  .state-box p { color: var(--text-dim); max-width: 46ch; margin: 0 auto; font-size: 0.92rem; }
+  .state-box .sb-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn-ghost { border: 1px solid var(--border-strong); padding: 9px 16px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; color: var(--text); transition: 0.16s; }
+  .btn-ghost:hover { background: var(--surface-hover); }
+
+  .spinner { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--surface-2); border-top-color: var(--accent); animation: spin 0.8s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .load-more-wrap { display: flex; justify-content: center; margin-top: 26px; }
+
+  /* ============================================================
+     MODAL
+     ============================================================ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    background: rgba(4, 6, 11, 0.72); backdrop-filter: blur(6px);
+    align-items: flex-start; justify-content: center; padding: 32px 18px; overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; animation: fade 0.2s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    width: 100%; max-width: 820px; background: linear-gradient(180deg, #0e1424, var(--bg-2));
+    border: 1px solid var(--border-strong); border-radius: 22px; box-shadow: var(--shadow);
+    overflow: hidden; animation: pop 0.3s cubic-bezier(0.22, 1, 0.36, 1); margin: auto 0;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .modal-head {
+    position: relative; padding: 24px 26px 22px;
+    background: radial-gradient(120% 100% at 0% 0%, rgba(45,212,191,0.12), transparent 60%);
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-close {
+    position: absolute; top: 18px; right: 18px; width: 38px; height: 38px; border-radius: 11px;
+    display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text-dim); transition: 0.16s;
+  }
+  .modal-close:hover { background: var(--red); color: #fff; border-color: var(--red); transform: rotate(90deg); }
+  .modal-head .mh-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 13px; }
+  .modal-head h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; line-height: 1.25; letter-spacing: -0.02em; padding-right: 48px; max-width: 64ch; }
+  .modal-head .mh-org { margin-top: 10px; color: var(--text-dim); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+
+  .modal-body { padding: 24px 26px 28px; }
+  .section-title { font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 26px 0 14px; display: flex; align-items: center; gap: 9px; }
+  .section-title:first-child { margin-top: 0; }
+  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  /* status timeline */
+  .timeline { display: flex; gap: 0; position: relative; }
+  .tl-step { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
+  .tl-step .tl-line { position: absolute; top: 21px; left: -50%; width: 100%; height: 3px; background: var(--surface-2); z-index: 0; }
+  .tl-step:first-child .tl-line { display: none; }
+  .tl-step.done .tl-line, .tl-step.current .tl-line { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .tl-node {
+    width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+    position: relative; z-index: 1; transition: 0.25s;
+  }
+  .tl-step.done .tl-node { background: linear-gradient(140deg, var(--accent), var(--accent-2)); color: #04141a; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(45,212,191,0.6); }
+  .tl-step.current .tl-node { background: var(--bg-2); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: pulse 1.8s ease-in-out infinite; }
+  .tl-step.terminal .tl-node { background: var(--red); color: #fff; border-color: transparent; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 4px var(--accent-soft); } 50% { box-shadow: 0 0 0 9px rgba(45,212,191,0.06); } }
+  .tl-label { font-size: 0.72rem; margin-top: 10px; color: var(--text-dim); font-weight: 600; max-width: 11ch; }
+  .tl-step.done .tl-label, .tl-step.current .tl-label { color: var(--text); }
+  .tl-date { font-size: 0.64rem; color: var(--muted); margin-top: 3px; font-family: var(--font-mono); }
+
+  .terminal-note { margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid rgba(248,113,106,0.35); background: rgba(248,113,106,0.08); color: var(--red); font-size: 0.85rem; display: flex; gap: 9px; align-items: center; }
+
+  /* detail grid */
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .detail-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 15px; background: var(--surface); }
+  .detail-item .di-k { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+  .detail-item .di-v { font-size: 0.95rem; font-weight: 500; word-break: break-word; }
+  .detail-item .di-v.mono { font-family: var(--font-mono); }
+  .detail-item.gold .di-v { color: var(--gold); font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  .detail-item.green .di-v { color: var(--green); font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  .detail-item.full { grid-column: span 2; }
+
+  /* items table */
+  .items-wrap { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .items-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .items-table th { text-align: left; padding: 11px 13px; background: var(--surface-2); color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .items-table td { padding: 11px 13px; border-top: 1px solid var(--border); color: var(--text-dim); }
+  .items-table td.num { font-family: var(--font-mono); color: var(--text); text-align: right; white-space: nowrap; }
+  .items-mini-load { padding: 20px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+  .modal-foot { display: flex; gap: 12px; flex-wrap: wrap; padding: 20px 26px; border-top: 1px solid var(--border); background: var(--surface); }
+  .btn-link {
+    display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: var(--radius-sm);
+    font-size: 0.88rem; font-weight: 600; transition: 0.16s; border: 1px solid var(--border-strong); color: var(--text);
+  }
+  .btn-link:hover { background: var(--surface-hover); }
+  .btn-link.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #042; border-color: transparent; }
+
+  /* config drawer */
+  .drawer-overlay { position: fixed; inset: 0; z-index: 110; display: none; background: rgba(4,6,11,0.6); backdrop-filter: blur(4px); }
+  .drawer-overlay.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(420px, 92vw); z-index: 111;
+    background: var(--bg-2); border-left: 1px solid var(--border-strong); padding: 26px;
+    transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); overflow-y: auto;
+  }
+  .drawer.open { transform: none; }
+  .drawer h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin-bottom: 6px; }
+  .drawer p.dsub { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 22px; }
+  .drawer label { font-size: 0.78rem; font-weight: 600; color: var(--text-dim); display: block; margin: 16px 0 7px; }
+  .drawer .hint { font-size: 0.78rem; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+  .drawer code { font-family: var(--font-mono); background: var(--surface-2); padding: 2px 6px; border-radius: 5px; font-size: 0.8rem; color: var(--accent); }
+  .drawer .strat-list { margin: 10px 0 0; font-size: 0.82rem; color: var(--text-dim); }
+  .strat-item { display: flex; align-items: center; gap: 9px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .strat-item .si-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .strat-item.ok .si-dot { background: var(--green); }
+  .strat-item.fail .si-dot { background: var(--red); }
+  .drawer-actions { margin-top: 24px; display: flex; gap: 10px; }
+
+  footer.foot { border-top: 1px solid var(--border); padding: 28px 0 50px; color: var(--muted); font-size: 0.8rem; }
+  footer.foot a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 3px; }
+  .foot-grid { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg-2); border: 1px solid var(--border-strong); color: var(--text);
+    padding: 13px 20px; border-radius: var(--radius-sm); font-size: 0.88rem; z-index: 200;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: 0.3s; display: flex; gap: 10px; align-items: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* responsive */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .field.c3, .field.c2, .field.c4 { grid-column: span 6; }
+    .btn-primary { grid-column: span 12; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .detail-item.full { grid-column: span 1; }
+    .tl-label { font-size: 0.62rem; }
+    .tl-node { width: 38px; height: 38px; }
+  }
+  @media (max-width: 560px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .hero { padding: 36px 0 18px; }
+    .timeline { overflow-x: auto; padding-bottom: 10px; }
+    .tl-step { min-width: 84px; }
+  }
 </style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="gov-bar">Governo Federal — Portal Nacional de Contratações Públicas</div>
-  <div class="header-inner">
-    <div class="header-brand">
-      <div class="logo-box">PNCP</div>
-      <div class="brand-text">
-        <h1>Consulta de Licitações</h1>
-        <p>Dados abertos em tempo real</p>
+<!-- ===================== HEADER ===================== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <div>
+        <h1>Painel de Licitações &amp; Contas Públicas</h1>
+        <p>Fonte oficial · PNCP / Compras.gov.br</p>
       </div>
     </div>
-    <div class="vercel-pill">
-      <div class="vpill-dot"></div>
-      API conectada
+    <div class="topbar-spacer"></div>
+    <div class="src-pill" id="srcPill" title="Status da conexão com a API do PNCP">
+      <span class="src-dot" id="srcDot"></span><span id="srcText">Aguardando consulta</span>
     </div>
+    <button class="icon-btn" id="cfgBtn" title="Configurar fonte de dados / proxy" aria-label="Configurações">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
 </header>
 
-<main class="main">
+<div class="wrap">
 
-  <!-- DASHBOARD -->
-  <div class="dashboard">
-    <div class="dash-card" id="dCard0">
-      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 017 7h2"/><path d="M15 7h2a5 5 0 010 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
-      <div class="dash-label">Total encontrado</div>
-      <div class="dash-value" id="dTotal">—</div>
-      <div class="dash-sub" id="dTotalSub">Faça uma pesquisa</div>
-      <div class="dash-bullets" id="dBulletsTotal"></div>
-    </div>
-    <div class="dash-card accent-green">
-      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-      <div class="dash-label">Abertas</div>
-      <div class="dash-value" id="dOpen">—</div>
-      <div class="dash-sub">Recebendo propostas</div>
-      <div class="dash-bullets" id="dBulletsOpen"></div>
-    </div>
-    <div class="dash-card accent-amber">
-      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="dash-label">Em julgamento</div>
-      <div class="dash-value" id="dJudge">—</div>
-      <div class="dash-sub">Análise de propostas</div>
-      <div class="dash-bullets" id="dBulletsJudge"></div>
-    </div>
-    <div class="dash-card accent-purple">
-      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-      <div class="dash-label">Valor estimado</div>
-      <div class="dash-value" id="dValue" style="font-size:16px">—</div>
-      <div class="dash-sub">da página atual</div>
-      <div class="dash-bullets" id="dBulletsValue"></div>
-    </div>
-    <div class="dash-insight" id="dInsight" style="display:none">
-      <h3>Visão geral</h3>
-      <div class="insight-grid" id="insightGrid"></div>
-    </div>
-  </div>
+  <!-- ===================== HERO ===================== -->
+  <section class="hero">
+    <span class="hero-eyebrow">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Inteligência em contratações públicas
+    </span>
+    <h2>Transparência das compras dos <span class="grad">5.570 municípios</span> brasileiros</h2>
+    <p class="lede">Estatísticas nacionais em tempo real, busca por estado e município, e o ciclo de vida completo de cada licitação — direto da base oficial do Portal Nacional de Contratações Públicas.</p>
 
-  <!-- SEARCH -->
-  <div class="search-panel">
-    <div class="sp-title">Pesquisar licitações</div>
-    <div class="search-row">
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" id="searchInput" placeholder="Objeto, produto, serviço…" value="notebook" autocomplete="off"/>
+    <!-- KPI bullets -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi loading">
+        <div class="kpi-top">
+          <span class="kpi-tag">Cobertura</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></span>
+        </div>
+        <div class="kpi-val" id="kpiMun">5.570</div>
+        <div class="kpi-sub" id="kpiMunSub">municípios · 27 UFs monitoradas</div>
       </div>
-      <button class="btn-search" onclick="doSearch()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <div class="kpi loading">
+        <div class="kpi-top">
+          <span class="kpi-tag">Propostas abertas agora</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>
+        </div>
+        <div class="kpi-val"><span class="skeleton" id="kpiAbertasSk"></span><span id="kpiAbertas" hidden>—</span></div>
+        <div class="kpi-sub">licitações recebendo propostas hoje</div>
+      </div>
+      <div class="kpi loading">
+        <div class="kpi-top">
+          <span class="kpi-tag">Publicadas (30 dias)</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></span>
+        </div>
+        <div class="kpi-val"><span class="skeleton" id="kpiPubSk"></span><span id="kpiPub" hidden>—</span></div>
+        <div class="kpi-sub">novas contratações no último mês</div>
+      </div>
+      <div class="kpi loading">
+        <div class="kpi-top">
+          <span class="kpi-tag">Valor estimado (amostra)</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+        </div>
+        <div class="kpi-val"><span class="skeleton" id="kpiValSk"></span><span id="kpiVal" hidden>—</span></div>
+        <div class="kpi-sub">somatório das publicações recentes</div>
+      </div>
+    </div>
+
+    <!-- region distribution -->
+    <div class="region-row" id="regionRow"></div>
+  </section>
+
+  <!-- ===================== SEARCH PANEL ===================== -->
+  <section class="panel" id="searchPanel">
+    <div class="panel-head">
+      <span class="ph-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <h3>Pesquisar contratações</h3>
+      <span>Selecione UF → município → busque</span>
+    </div>
+
+    <div class="filters">
+      <div class="field c3">
+        <label for="ufSel">Estado (UF)</label>
+        <select class="ctrl" id="ufSel"><option value="">Carregando…</option></select>
+      </div>
+      <div class="field c3">
+        <label for="munSel">Município</label>
+        <select class="ctrl" id="munSel" disabled><option value="">Selecione a UF primeiro</option></select>
+      </div>
+      <div class="field c2">
+        <label for="modSel">Modalidade</label>
+        <select class="ctrl" id="modSel"></select>
+      </div>
+      <div class="field c2">
+        <label for="periodSel">Período</label>
+        <select class="ctrl" id="periodSel">
+          <option value="30">Últimos 30 dias</option>
+          <option value="90" selected>Últimos 90 dias</option>
+          <option value="180">Últimos 180 dias</option>
+          <option value="365">Último ano</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="searchBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         Buscar
       </button>
     </div>
-    <div class="filters-row">
-      <div class="filter-group">
-        <label>Estado (UF)</label>
-        <select id="filterUF" onchange="onUFChange()">
-          <option value="">Todos os estados</option>
-          <option value="AC">AC — Acre</option><option value="AL">AL — Alagoas</option>
-          <option value="AP">AP — Amapá</option><option value="AM">AM — Amazonas</option>
-          <option value="BA">BA — Bahia</option><option value="CE">CE — Ceará</option>
-          <option value="DF">DF — Distrito Federal</option><option value="ES">ES — Espírito Santo</option>
-          <option value="GO">GO — Goiás</option><option value="MA">MA — Maranhão</option>
-          <option value="MT">MT — Mato Grosso</option><option value="MS">MS — Mato Grosso do Sul</option>
-          <option value="MG">MG — Minas Gerais</option><option value="PA">PA — Pará</option>
-          <option value="PB">PB — Paraíba</option><option value="PR">PR — Paraná</option>
-          <option value="PE">PE — Pernambuco</option><option value="PI">PI — Piauí</option>
-          <option value="RJ">RJ — Rio de Janeiro</option><option value="RN">RN — Rio Grande do Norte</option>
-          <option value="RS">RS — Rio Grande do Sul</option><option value="RO">RO — Rondônia</option>
-          <option value="RR">RR — Roraima</option><option value="SC">SC — Santa Catarina</option>
-          <option value="SP">SP — São Paulo</option><option value="SE">SE — Sergipe</option>
-          <option value="TO">TO — Tocantins</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Município</label>
-        <select id="filterMun" onchange="doSearch()" disabled>
-          <option value="">Selecione um estado</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Status</label>
-        <select id="filterStatus" onchange="doSearch()">
-          <option value="">Todos</option>
-          <option value="1">Recebendo proposta</option>
-          <option value="2">Em julgamento</option>
-          <option value="3">Encerrada</option>
-          <option value="4">Deserta/Fracassada</option>
-          <option value="5">Suspensa</option>
-          <option value="7">Homologada</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Modalidade</label>
-        <select id="filterModal" onchange="doSearch()">
-          <option value="">Todas</option>
-          <option value="6">Pregão eletrônico</option>
-          <option value="1">Concorrência</option>
-          <option value="8">Dispensa</option>
-          <option value="9">Inexigibilidade</option>
-          <option value="7">Pregão presencial</option>
-          <option value="4">Concurso</option>
-          <option value="5">Leilão</option>
-          <option value="12">Credenciamento</option>
-        </select>
-      </div>
-    </div>
-  </div>
+  </section>
 
-  <div id="errBox"></div>
-  <div class="results-bar" id="resultsBar" style="display:none">
-    <div class="results-count" id="resCount"></div>
-    <div style="font-size:13px;color:var(--txt3)">Mais recentes primeiro</div>
-  </div>
-  <div id="cardList"></div>
-  <div id="pgArea"></div>
-</main>
+  <!-- ===================== RESULTS ===================== -->
+  <section class="results" id="results">
+    <div class="state-box" id="emptyState">
+      <div class="sb-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div>
+      <h4>Comece escolhendo um município</h4>
+      <p>Selecione um estado e um município acima para listar as licitações e compras públicas registradas no PNCP. Clique em qualquer card para ver o ciclo de vida completo.</p>
+    </div>
+  </section>
 
-<!-- MODAL -->
-<div class="overlay" id="overlay" onclick="overlayClick(event)">
-  <div class="modal" role="dialog" aria-modal="true">
-    <div class="modal-timeline" id="mTimeline"></div>
-    <div class="modal-header">
-      <div class="mh-left">
-        <div class="m-eyebrow" id="mEye"></div>
-        <div class="m-title" id="mTitle"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal()" aria-label="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="modal-badges" id="mBadges"></div>
-    <div class="modal-body" id="mBody"></div>
-    <div class="modal-footer">
-      <a id="mLink" href="#" target="_blank" rel="noopener" class="btn-primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-        Ver no PNCP
-      </a>
-      <button class="btn-sec" onclick="closeModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        Fechar
-      </button>
-    </div>
-  </div>
 </div>
 
+<!-- ===================== MODAL ===================== -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" id="modal"></div>
+</div>
+
+<!-- ===================== CONFIG DRAWER ===================== -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer" aria-label="Configurações de fonte de dados">
+  <h3>Fonte de dados &amp; conexão</h3>
+  <p class="dsub">A API pública do PNCP não envia cabeçalhos CORS, então o navegador bloqueia chamadas diretas. Configure um proxy para produção.</p>
+
+  <label for="proxyInput">URL base do proxy (recomendado)</label>
+  <input class="ctrl" id="proxyInput" placeholder="https://seu-app.vercel.app/api/pncp" />
+  <p class="hint">O proxy deve repassar a chamada para <code>pncp.gov.br/api</code> e devolver com <code>Access-Control-Allow-Origin</code>. Entregue junto: <code>/api/pncp.js</code> (Vercel). O painel chama <code>{proxy}?path=/consulta/v1/...</code>.</p>
+
+  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+    <input type="checkbox" id="publicProxyChk" style="width:auto;" />
+    <span style="font-weight:500;color:var(--text);">Permitir proxies públicos de fallback (apenas testes)</span>
+  </label>
+  <p class="hint">Usa serviços como <code>corsproxy.io</code> / <code>allorigins</code>. Instáveis e sem garantia — não use em produção.</p>
+
+  <div class="section-title" style="margin-top:24px;">Diagnóstico de conexão</div>
+  <div class="strat-list" id="stratList">
+    <div class="strat-item" id="stratProxy"><span class="si-dot"></span><span>Proxy configurado</span></div>
+    <div class="strat-item" id="stratDirect"><span class="si-dot"></span><span>Conexão direta (CORS)</span></div>
+    <div class="strat-item" id="stratPublic"><span class="si-dot"></span><span>Proxy público de fallback</span></div>
+  </div>
+
+  <div class="drawer-actions">
+    <button class="btn-primary" id="saveCfg" style="grid-column:unset;flex:1;">Salvar &amp; testar</button>
+    <button class="btn-ghost" id="closeDrawer">Fechar</button>
+  </div>
+</aside>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <strong style="color:var(--text-dim);">Painel de Licitações &amp; Contas Públicas</strong><br/>
+        Dados: <a href="https://pncp.gov.br" target="_blank" rel="noopener">PNCP</a> ·
+        <a href="https://servicodados.ibge.gov.br" target="_blank" rel="noopener">IBGE Localidades</a>.
+        Informação pública, sem autenticação.
+      </div>
+      <div style="text-align:right;">
+        Os valores e situações refletem o que os órgãos publicaram no PNCP.<br/>
+        Consulta read-only · nenhum dado é alterado.
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
 <script>
-/* ─ Config ─────────────────────────────────────────────────── */
-// No Vercel, o proxy é uma API Route relativa — sem necessidade de porta ou host externo
-const PROXY_BASE = '/api/pncp';
+"use strict";
+/* ============================================================================
+   PAINEL DE LICITAÇÕES & CONTAS PÚBLICAS — PNCP
+   Arquitetura em camadas:
+     1. CONFIG        — constantes, domínios, mapas (modalidade/situação)
+     2. STATE         — estado central da aplicação
+     3. UTIL          — formatadores, DOM helpers, cache
+     4. HTTP          — camada resiliente (proxy → direto → fallback) + timeout
+     5. SERVICES      — ibgeService, pncpService
+     6. RENDER        — hero/KPIs, filtros, lista, modal+timeline, drawer
+     7. CONTROLLER    — wiring de eventos / fluxo
+   ========================================================================== */
 
-const MODAL_MAP={1:'Concorrência',2:'Diálogo competitivo',3:'Manifestação de interesse',4:'Concurso',5:'Leilão',6:'Pregão eletrônico',7:'Pregão presencial',8:'Dispensa de licitação',9:'Inexigibilidade',10:'Pré-qualificação',12:'Credenciamento',13:'Seleção pública'};
-const SIT_MAP={1:'Recebendo proposta',2:'Em julgamento',3:'Encerrada',4:'Deserta/Fracassada',5:'Suspensa',6:'Anulada/Revogada',7:'Homologada',8:'Adjudicada'};
-const ESFERA_MAP={'F':'Federal','E':'Estadual','M':'Municipal','D':'Distrital'};
-const PODER_MAP={'E':'Executivo','L':'Legislativo','J':'Judiciário','M':'Ministério Público','D':'Defensoria'};
+/* ============================== 1. CONFIG ============================== */
+const CFG = {
+  PNCP_API: "https://pncp.gov.br/api",          // base do PNCP (consulta + pncp)
+  IBGE_API: "https://servicodados.ibge.gov.br/api/v1/localidades",
+  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public" },
+  HTTP_TIMEOUT: 18000,
+  PAGE_SIZE: 20,
+  CACHE_TTL: 1000 * 60 * 10,                      // 10 min
+  PUBLIC_PROXIES: [
+    (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+    (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)
+  ]
+};
 
-const STATUS_FLOW=[
-  {label:'Publicada',      icon:'M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z'},
-  {label:'Prop. abertas',  icon:'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'},
-  {label:'Em julgamento',  icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'},
-  {label:'Homologada',     icon:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
-  {label:'Encerrada',      icon:'M5 13l4 4L19 7'},
+// Modalidades de contratação (domínio PNCP). 0 = "principais" (itera).
+const MODALIDADES = [
+  { id: 0, nome: "Principais (Pregão + Dispensa + Concorrência)" },
+  { id: 6, nome: "Pregão — Eletrônico" },
+  { id: 8, nome: "Dispensa de Licitação" },
+  { id: 9, nome: "Inexigibilidade" },
+  { id: 4, nome: "Concorrência — Eletrônica" },
+  { id: 12, nome: "Credenciamento" },
+  { id: 5, nome: "Concorrência — Presencial" },
+  { id: 7, nome: "Pregão — Presencial" },
+  { id: 3, nome: "Concurso" },
+  { id: 1, nome: "Leilão — Eletrônico" },
+  { id: 13, nome: "Leilão — Presencial" },
+  { id: 2, nome: "Diálogo Competitivo" },
+  { id: 10, nome: "Manifestação de Interesse" },
+  { id: 11, nome: "Pré-qualificação" }
 ];
+const MOD_PRINCIPAIS = [6, 8, 4, 9];
 
-let currentPage=1,totalPages=1,totalRecords=0,results=[];
-const PAGE_SIZE=10;
+// Situação da compra (domínio PNCP).
+const SITUACAO = {
+  1: { nome: "Divulgada no PNCP", cls: "st-1" },
+  2: { nome: "Revogada", cls: "st-2", terminal: true },
+  3: { nome: "Anulada", cls: "st-3", terminal: true },
+  4: { nome: "Suspensa", cls: "st-4", terminal: true }
+};
 
-/* ─ Helpers ─────────────────────────────────────────────────── */
-function bClass(s){return s===1?'b-open':s===2?'b-judge':(s===4||s===6)?'b-red':s===7?'b-purple':'b-closed';}
-function fBRL(v){if(!v&&v!==0)return'—';return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);}
-function fDate(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-?(\d{2})-?(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;try{return new Date(d).toLocaleDateString('pt-BR');}catch{return d;}}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function shortOrg(s){if(!s||s==='—')return'—';return s.length>55?s.slice(0,55)+'…':s;}
+/* ============================== 2. STATE ============================== */
+const state = {
+  uf: "", ufNome: "",
+  munId: "", munNome: "",
+  modalidade: 0,
+  periodo: 90,
+  pagina: 1,
+  totalRegistros: 0,
+  totalPaginas: 1,
+  items: [],
+  loading: false,
+  proxyBase: localStorage.getItem(CFG.LS.PROXY) || "",
+  allowPublic: localStorage.getItem(CFG.LS.PUBLIC) === "1",
+  lastStrategy: null,
+  cache: new Map()
+};
 
-/* ─ UF → Municípios via IBGE ─────────────────────────────── */
-async function onUFChange(){
-  const uf=document.getElementById('filterUF').value;
-  const sel=document.getElementById('filterMun');
-  if(!uf){sel.innerHTML='<option value="">Selecione um estado</option>';sel.disabled=true;doSearch();return;}
-  sel.innerHTML='<option value="">Carregando…</option>';sel.disabled=true;
-  try{
-    const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
-    const d=await r.json();
-    sel.innerHTML='<option value="">Todos os municípios</option>'+d.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
-    sel.disabled=false;
-  }catch{sel.innerHTML='<option value="">Erro ao carregar</option>';sel.disabled=false;}
-  doSearch();
+/* ============================== 3. UTIL ============================== */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const el = (tag, attrs = {}, html) => {
+  const n = document.createElement(tag);
+  for (const k in attrs) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "dataset") Object.assign(n.dataset, attrs[k]);
+    else n.setAttribute(k, attrs[k]);
+  }
+  if (html != null) n.innerHTML = html;
+  return n;
+};
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const fmtBRL = (v) => {
+  if (v == null || isNaN(v)) return "—";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
+};
+const fmtBRLCompact = (v) => {
+  if (v == null || isNaN(v)) return "—";
+  const abs = Math.abs(v);
+  if (abs >= 1e9) return "R$ " + (v / 1e9).toFixed(2).replace(".", ",") + " bi";
+  if (abs >= 1e6) return "R$ " + (v / 1e6).toFixed(2).replace(".", ",") + " mi";
+  if (abs >= 1e3) return "R$ " + (v / 1e3).toFixed(0) + " mil";
+  return fmtBRL(v);
+};
+const fmtInt = (v) => (v == null || isNaN(v)) ? "—" : new Intl.NumberFormat("pt-BR").format(v);
+const fmtDate = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return "—";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+const fmtDateShort = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+};
+const ymd = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return "" + y + m + d;
+};
+const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d; };
+
+function toast(msg, ms = 3200) {
+  const t = $("#toast");
+  t.innerHTML = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), ms);
 }
 
-/* ─ Dashboard ────────────────────────────────────────────── */
-function updateDashboard(items,total){
-  const open=items.filter(i=>i.situacaoCompraId===1).length;
-  const judge=items.filter(i=>i.situacaoCompraId===2).length;
-  const closed=items.filter(i=>i.situacaoCompraId===3||i.situacaoCompraId===7).length;
-  const totalVal=items.reduce((a,i)=>a+(i.valorTotalEstimado||i.valorTotalHomologado||0),0);
-  const modMap={};items.forEach(i=>{const k=MODAL_MAP[i.modalidadeId]||'Outros';modMap[k]=(modMap[k]||0)+1;});
-  const topMod=Object.entries(modMap).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>`${k} (${v})`).join(', ')||'—';
-  const ufs=[...new Set(items.map(i=>i.unidadeOrgao?.ufSigla).filter(Boolean))].join(', ')||'—';
-  const orgs=[...new Set(items.map(i=>i.orgaoEntidade?.razaoSocial||i.orgaoEntidade?.nomeFantasia).filter(Boolean))].length;
-  const maxVal=Math.max(...items.map(i=>i.valorTotalEstimado||0));
-
-  document.getElementById('dTotal').textContent=total.toLocaleString('pt-BR');
-  document.getElementById('dTotalSub').textContent=`${items.length} na página atual`;
-  document.getElementById('dOpen').textContent=open;
-  document.getElementById('dJudge').textContent=judge;
-  document.getElementById('dValue').textContent=totalVal>0?fBRL(totalVal):'—';
-
-  document.getElementById('dBulletsTotal').innerHTML=`
-    <div class="dash-bullet">${total.toLocaleString('pt-BR')} licitações encontradas</div>
-    <div class="dash-bullet">${orgs} órgãos distintos nesta página</div>
-    <div class="dash-bullet">UFs: ${ufs}</div>`;
-  document.getElementById('dBulletsOpen').innerHTML=open>0?`
-    <div class="dash-bullet">${open} edital${open>1?'is':''} aceitando propostas</div>
-    <div class="dash-bullet">Verifique os prazos no edital</div>`:
-    `<div class="dash-bullet">Nenhuma aberta nesta página</div>`;
-  document.getElementById('dBulletsJudge').innerHTML=judge>0?`
-    <div class="dash-bullet">${judge} em avaliação de propostas</div>
-    <div class="dash-bullet">Aguardar resultado do julgamento</div>`:
-    `<div class="dash-bullet">Nenhuma em julgamento</div>`;
-  document.getElementById('dBulletsValue').innerHTML=`
-    <div class="dash-bullet">Modalidade principal: ${topMod}</div>
-    <div class="dash-bullet">${closed} encerrada${closed!==1?'s':''}/homologada${closed!==1?'s':''}</div>`;
-
-  document.getElementById('dInsight').style.display='block';
-  document.getElementById('insightGrid').innerHTML=`
-    <div class="insight-item"><div class="i-label">Maior valor estimado</div><div class="i-val">${maxVal>0?fBRL(maxVal):'—'}</div><div class="i-sub">nesta página</div></div>
-    <div class="insight-item"><div class="i-label">Pregão eletrônico</div><div class="i-val">${items.filter(i=>i.modalidadeId===6).length}</div><div class="i-sub">de ${items.length} licitações</div></div>
-    <div class="insight-item"><div class="i-label">Encerradas/Homologadas</div><div class="i-val">${closed}</div><div class="i-sub">processo finalizado</div></div>`;
+// animated counter
+function countUp(node, target, fmt) {
+  const dur = 900, start = performance.now();
+  function step(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    node.textContent = fmt(Math.round(target * eased));
+    if (p < 1) requestAnimationFrame(step);
+    else node.textContent = fmt(target);
+  }
+  requestAnimationFrame(step);
 }
 
-/* ─ Search ───────────────────────────────────────────────── */
-async function doSearch(page){
-  if(!page){page=1;currentPage=1;}
-  const q=document.getElementById('searchInput').value.trim();
-  if(!q){showErr('Digite uma palavra-chave para pesquisar.');return;}
-  clearErr();
+/* ============================== 4. HTTP (resiliente) ============================== */
+// Estratégia: proxy configurado → direto → proxies públicos (se permitido).
+// Retorna { data, strategy }. Atualiza diagnóstico visual.
+function setStrat(id, status) {
+  const node = $("#strat" + id);
+  if (!node) return;
+  node.classList.remove("ok", "fail");
+  if (status) node.classList.add(status);
+}
 
-  const uf=document.getElementById('filterUF').value;
-  const mun=document.getElementById('filterMun').value;
-  const status=document.getElementById('filterStatus').value;
-  const modal=document.getElementById('filterModal').value;
-
-  document.getElementById('resultsBar').style.display='none';
-  document.getElementById('cardList').innerHTML='<div class="state-box"><div class="loading-spinner"></div><p>Consultando a API do PNCP…</p></div>';
-  document.getElementById('pgArea').innerHTML='';
-
-  let path=`/api/consulta/v1/contratacoes/proposta?palavraChave=${encodeURIComponent(q)}&pagina=${page}&tamanhoPagina=${PAGE_SIZE}`;
-  if(uf)    path+=`&uf=${uf}`;
-  if(mun)   path+=`&codigoMunicipioIbge=${mun}`;
-  if(status)path+=`&codigoSituacaoContratacao=${status}`;
-  if(modal) path+=`&modalidadeId=${modal}`;
-
-  try{
-    const r=await fetch(`${PROXY_BASE}${path}`,{signal:AbortSignal.timeout(15000)});
-    if(r.status===404){
-      document.getElementById('cardList').innerHTML=`<div class="state-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><p>Nenhuma licitação para <strong>"${esc(q)}"</strong></p><small>Tente outros filtros ou palavras-chave</small></div>`;
-      return;
-    }
-    if(!r.ok)throw new Error(`HTTP ${r.status}`);
-    const data=await r.json();
-    results=data.data||[];
-    totalRecords=data.totalRegistros||0;
-    totalPages=Math.ceil(totalRecords/PAGE_SIZE)||1;
-    currentPage=page;
-    updateDashboard(results,totalRecords);
-    renderCards();
-  }catch(e){
-    document.getElementById('cardList').innerHTML=`<div class="state-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Erro ao buscar dados</p><small>${esc(e.message)}</small></div>`;
+async function timedFetch(url, opts = {}) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), CFG.HTTP_TIMEOUT);
+  try {
+    const res = await fetch(url, { ...opts, signal: ac.signal, headers: { Accept: "application/json", ...(opts.headers || {}) } });
+    return res;
+  } finally {
+    clearTimeout(to);
   }
 }
 
-/* ─ Render Cards ─────────────────────────────────────────── */
-function renderCards(){
-  if(!results.length){document.getElementById('cardList').innerHTML='<div class="state-box"><p>Nenhum resultado.</p></div>';return;}
-  const s=(currentPage-1)*PAGE_SIZE+1,e=Math.min(currentPage*PAGE_SIZE,totalRecords);
-  document.getElementById('resultsBar').style.display='flex';
-  document.getElementById('resCount').innerHTML=`Exibindo <strong>${s}–${e}</strong> de <strong>${totalRecords.toLocaleString('pt-BR')}</strong> licitações`;
+// path ex.: "/consulta/v1/contratacoes/publicacao?dataInicial=..."
+async function pncpFetch(path) {
+  const target = CFG.PNCP_API + path;
+  const cacheKey = "pncp:" + path;
+  const cached = state.cache.get(cacheKey);
+  if (cached && Date.now() - cached.t < CFG.CACHE_TTL) return { data: cached.v, strategy: "cache" };
 
-  document.getElementById('cardList').innerHTML=results.map((item,i)=>{
-    const sit=item.situacaoCompraId;
-    const mod=MODAL_MAP[item.modalidadeId]||`Mod ${item.modalidadeId||'?'}`;
-    const valor=item.valorTotalEstimado||item.valorTotalHomologado;
-    const org=item.orgaoEntidade?.razaoSocial||item.orgaoEntidade?.nomeFantasia||'—';
-    const uf=item.unidadeOrgao?.ufSigla||'';
-    const mun=item.unidadeOrgao?.municipioNome||'';
-    const local=[mun,uf].filter(Boolean).join(' — ');
-    const obj=esc(item.objetoCompra||'(objeto não informado)');
-    return`<div class="card" onclick="openModal(${i})">
-      <div class="card-top"><div class="card-title">${obj.length>155?obj.slice(0,155)+'…':obj}</div><span class="badge ${bClass(sit)}">${SIT_MAP[sit]||'Desconhecido'}</span></div>
-      <div class="card-meta">
-        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>${esc(mod)}</span>
-        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Abertura: ${fDate(item.dataAberturaProposta)}</span>
-        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Enc.: ${fDate(item.dataEncerramentoProposta)}</span>
-      </div>
-      <div class="card-footer">
-        <span class="card-org"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>${esc(shortOrg(org))}${local?` — ${esc(local)}`:''}</span></span>
-        ${valor?`<span class="card-value">${fBRL(valor)}</span>`:''}
-      </div>
-      <span class="card-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
-    </div>`;
-  }).join('');
-  renderPagination();
+  const attempts = [];
+  if (state.proxyBase) {
+    const base = state.proxyBase.replace(/\/+$/, "");
+    attempts.push({ name: "Proxy", strat: "Proxy", url: base + "?path=" + encodeURIComponent(path) });
+  }
+  attempts.push({ name: "Direct", strat: "Direct", url: target });
+  if (state.allowPublic) {
+    CFG.PUBLIC_PROXIES.forEach((fn) => attempts.push({ name: "Public", strat: "Public", url: fn(target) }));
+  }
+
+  ["Proxy", "Direct", "Public"].forEach((s) => setStrat(s, null));
+
+  let lastErr = null;
+  for (const a of attempts) {
+    try {
+      const res = await timedFetch(a.url);
+      if (res.status === 204) { state.cache.set(cacheKey, { t: Date.now(), v: { data: [], totalRegistros: 0, totalPaginas: 0 } }); setStrat(a.strat, "ok"); state.lastStrategy = a.name; updateSrcPill("ok"); return { data: { data: [], totalRegistros: 0, totalPaginas: 0 }, strategy: a.name }; }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      state.cache.set(cacheKey, { t: Date.now(), v: json });
+      setStrat(a.strat, "ok");
+      state.lastStrategy = a.name;
+      updateSrcPill("ok");
+      return { data: json, strategy: a.name };
+    } catch (e) {
+      lastErr = e;
+      setStrat(a.strat, "fail");
+    }
+  }
+  updateSrcPill("err");
+  throw lastErr || new Error("Falha ao consultar o PNCP");
 }
 
-function renderPagination(){
-  const a=document.getElementById('pgArea');
-  if(totalPages<=1){a.innerHTML='';return;}
-  a.innerHTML=`<div class="pagination">
-    <button class="pg-btn" onclick="doSearch(${currentPage-1})" ${currentPage<=1?'disabled':''}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>Anterior
-    </button>
-    <span class="pg-info">Página <strong>${currentPage}</strong> de <strong>${totalPages.toLocaleString('pt-BR')}</strong></span>
-    <button class="pg-btn" onclick="doSearch(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>
-      Próxima<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
-  </div>`;
+// IBGE tem CORS liberado — fetch direto.
+async function ibgeFetch(path) {
+  const key = "ibge:" + path;
+  const cached = state.cache.get(key);
+  if (cached) return cached.v;
+  const res = await timedFetch(CFG.IBGE_API + path);
+  if (!res.ok) throw new Error("IBGE HTTP " + res.status);
+  const json = await res.json();
+  state.cache.set(key, { t: Date.now(), v: json });
+  return json;
 }
 
-/* ─ Modal Timeline ───────────────────────────────────────── */
-function buildTimeline(sit){
-  let active=0,isError=false;
-  if(sit===1)active=1;else if(sit===2)active=2;else if(sit===7)active=3;
-  else if(sit===3)active=4;else if(sit===4||sit===6){isError=true;active=4;}
-  return STATUS_FLOW.map((step,i)=>{
-    let cls=i<active?'done':i===active?isError?'error':'active':'';
-    return`<div class="tl-step ${cls}">
-      <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${step.icon}"/></svg></div>
-      <div class="tl-label">${step.label}</div>
-    </div>`;
-  }).join('');
+function updateSrcPill(status) {
+  const dot = $("#srcDot"), txt = $("#srcText");
+  dot.className = "src-dot";
+  if (status === "ok") {
+    dot.classList.add("live");
+    txt.textContent = "PNCP conectado · " + (state.lastStrategy === "Direct" ? "direto" : state.lastStrategy === "Proxy" ? "via proxy" : state.lastStrategy === "cache" ? "cache" : "fallback");
+  } else if (status === "warn") {
+    dot.classList.add("warn"); txt.textContent = "Conexão limitada";
+  } else if (status === "err") {
+    dot.classList.add("err"); txt.textContent = "PNCP bloqueado (CORS) — configure proxy";
+  }
 }
 
-/* ─ Modal Open ───────────────────────────────────────────── */
-function openModal(i){
-  const item=results[i];if(!item)return;
-  const sit=item.situacaoCompraId;
-  const mod=MODAL_MAP[item.modalidadeId]||`Modalidade ${item.modalidadeId}`;
-  const obj=item.objetoCompra||'—';
-  const orgNome=item.orgaoEntidade?.razaoSocial||item.orgaoEntidade?.nomeFantasia||'—';
-  const cnpj=item.orgaoEntidade?.cnpj||'—';
-  const esfera=ESFERA_MAP[item.orgaoEntidade?.esferaId]||'—';
-  const poder=PODER_MAP[item.orgaoEntidade?.poderId]||'—';
-  const uf=item.unidadeOrgao?.ufNome||item.unidadeOrgao?.ufSigla||'—';
-  const mun=item.unidadeOrgao?.municipioNome||'—';
-  const uasg=item.unidadeOrgao?.codigoUnidade||'—';
-  const nomeUA=item.unidadeOrgao?.nomeUnidade||'—';
-  const numCtrl=item.numeroControlePNCP||'';
-  const proc=item.numeroCompra||'—';
+/* ============================== 5. SERVICES ============================== */
+const ibgeService = {
+  async estados() {
+    const data = await ibgeFetch("/estados?orderBy=nome");
+    return data.map((e) => ({ id: e.id, sigla: e.sigla, nome: e.nome, regiao: e.regiao ? e.regiao.nome : "—" }));
+  },
+  async municipios(uf) {
+    const data = await ibgeFetch("/estados/" + uf + "/municipios");
+    return data.map((m) => ({ id: m.id, nome: m.nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }
+};
 
-  const bullets=[];
-  if(sit===1)bullets.push({c:'green',t:'Prazo de propostas em aberto — consulte o edital para participar.'});
-  if(sit===2)bullets.push({c:'amber',t:'Em julgamento: aguardar resultado da análise das propostas.'});
-  if(sit===7)bullets.push({c:'blue',t:'Homologada — contratação formal deverá ser publicada em breve.'});
-  if(sit===3)bullets.push({c:'purple',t:'Licitação encerrada. Consulte o resultado para detalhes.'});
-  if(sit===4||sit===6)bullets.push({c:'red',t:'Processo deserto, fracassado ou anulado — sem contratação prevista.'});
-  if(item.srp)bullets.push({c:'blue',t:'Sistema de Registro de Preços: múltiplos órgãos podem aderir à ata.'});
-  if(item.valorTotalEstimado>0)bullets.push({c:'green',t:`Valor estimado: ${fBRL(item.valorTotalEstimado)} — compare com referências de mercado.`});
-  if(item.modalidadeId===6)bullets.push({c:'blue',t:'Pregão eletrônico: participação remota, ampla concorrência entre fornecedores.'});
-  if(item.modalidadeId===8)bullets.push({c:'amber',t:'Dispensa de licitação: observe os requisitos legais específicos aplicáveis.'});
-  if(esfera==='Municipal')bullets.push({c:'purple',t:`Órgão municipal em ${mun}/${item.unidadeOrgao?.ufSigla||'—'}.`});
-  if(!bullets.length)bullets.push({c:'blue',t:'Consulte o edital completo no PNCP para informações detalhadas.'});
+const pncpService = {
+  // Contratações por publicação (exige modalidade). Filtra por uf/município.
+  async contratacoesPublicacao({ uf, municipioIbge, modalidade, dataInicial, dataFinal, pagina = 1 }) {
+    const qs = new URLSearchParams();
+    qs.set("dataInicial", dataInicial);
+    qs.set("dataFinal", dataFinal);
+    qs.set("codigoModalidadeContratacao", String(modalidade));
+    if (uf) qs.set("uf", uf);
+    if (municipioIbge) qs.set("codigoMunicipioIbge", String(municipioIbge));
+    qs.set("pagina", String(pagina));
+    qs.set("tamanhoPagina", String(CFG.PAGE_SIZE));
+    const { data } = await pncpFetch("/consulta/v1/contratacoes/publicacao?" + qs.toString());
+    return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
+  },
+  // Propostas em aberto a nível nacional (KPI hero).
+  async propostasAbertas({ modalidade, uf, municipioIbge, pagina = 1 }) {
+    const qs = new URLSearchParams();
+    qs.set("dataFinal", ymd(daysAgo(0)));
+    qs.set("codigoModalidadeContratacao", String(modalidade));
+    if (uf) qs.set("uf", uf);
+    if (municipioIbge) qs.set("codigoMunicipioIbge", String(municipioIbge));
+    qs.set("pagina", String(pagina));
+    qs.set("tamanhoPagina", "1");
+    const { data } = await pncpFetch("/consulta/v1/contratacoes/proposta?" + qs.toString());
+    return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
+  },
+  // Itens da contratação (API pncp/v1). numeroControlePNCP -> cnpj/ano/sequencial.
+  async itens(numeroControlePNCP) {
+    const m = /^(\d{14})-\d+-(\d+)\/(\d{4})$/.exec(numeroControlePNCP || "");
+    if (!m) return null;
+    const cnpj = m[1], seq = parseInt(m[2], 10), ano = m[3];
+    const { data } = await pncpFetch("/pncp/v1/orgaos/" + cnpj + "/compras/" + ano + "/" + seq + "/itens?pagina=1&tamanhoPagina=50");
+    return Array.isArray(data) ? data : (data && data.data ? data.data : null);
+  }
+};
 
-  document.getElementById('mTimeline').innerHTML=buildTimeline(sit);
-  document.getElementById('mEye').textContent=mod;
-  document.getElementById('mTitle').textContent=obj.length>200?obj.slice(0,200)+'…':obj;
-  document.getElementById('mBadges').innerHTML=`
-    <span class="badge ${bClass(sit)}">${SIT_MAP[sit]||'Desconhecido'}</span>
-    <span class="tag">${esc(mod)}</span>
-    ${item.modoDisputaId===1?'<span class="tag">Modo aberto</span>':item.modoDisputaId===2?'<span class="tag">Modo fechado</span>':item.modoDisputaId===3?'<span class="tag">Aberto/Fechado</span>':''}
-    ${item.srp?'<span class="tag">Registro de Preço</span>':''}
-    <span class="tag">${esfera}</span><span class="tag">${poder}</span>`;
+/* ============================== 6. RENDER ============================== */
 
-  document.getElementById('mBody').innerHTML=`
-    <div class="isec"><div class="isec-title">Objeto da contratação</div><div class="obj-box">${esc(obj)}</div></div>
-    <div class="isec"><div class="isec-title">Principais informações</div>
-      <div class="bullets-list">${bullets.map(b=>`<div class="bl-item"><div class="bl-dot ${b.c}"></div><span>${esc(b.t)}</span></div>`).join('')}</div>
-    </div>
-    <div class="isec"><div class="isec-title">Valores</div>
-      <div class="igrid">
-        <div class="ii"><label>Valor estimado</label><p class="val-big">${fBRL(item.valorTotalEstimado)}</p></div>
-        <div class="ii"><label>Valor homologado</label><p class="val-big">${fBRL(item.valorTotalHomologado)}</p></div>
-      </div>
-    </div>
-    <div class="isec"><div class="isec-title">Datas</div>
-      <div class="igrid">
-        <div class="ii"><label>Abertura das propostas</label><p>${fDate(item.dataAberturaProposta)}</p></div>
-        <div class="ii"><label>Encerramento</label><p>${fDate(item.dataEncerramentoProposta)}</p></div>
-        <div class="ii"><label>Publicação PNCP</label><p>${fDate(item.dataPublicacaoPncp)}</p></div>
-        <div class="ii"><label>Última atualização</label><p>${fDate(item.dataAtualizacao)}</p></div>
-      </div>
-    </div>
-    <div class="isec"><div class="isec-title">Órgão contratante</div>
-      <div class="igrid">
-        <div class="ii full"><label>Razão social</label><p><strong>${esc(orgNome)}</strong></p></div>
-        <div class="ii"><label>CNPJ</label><p style="font-family:'IBM Plex Mono',monospace;font-size:13px">${esc(cnpj)}</p></div>
-        <div class="ii"><label>Esfera / Poder</label><p>${esfera} — ${poder}</p></div>
-        <div class="ii"><label>Unidade administrativa</label><p>${esc(nomeUA)}</p></div>
-        <div class="ii"><label>Código UASG</label><p>${esc(uasg)}</p></div>
-        <div class="ii"><label>Município / UF</label><p>${esc(mun)} / ${esc(uf)}</p></div>
-      </div>
-    </div>
-    <div class="isec"><div class="isec-title">Identificação</div>
-      <div class="igrid">
-        <div class="ii"><label>Número do processo</label><p>${esc(proc)}</p></div>
-        <div class="ii"><label>Ano / Sequencial</label><p>${item.anoCompra||'—'} / ${item.sequencialCompra||'—'}</p></div>
-        <div class="ii"><label>Registro de Preços</label><p>${item.srp?'Sim':'Não'}</p></div>
-        ${numCtrl?`<div class="ii full"><label>Controle PNCP</label><p style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--txt3)">${esc(numCtrl)}</p></div>`:''}
-      </div>
-    </div>`;
+// ---- HERO KPIs + região ----
+async function loadHero() {
+  // estados (IBGE — sempre funciona via CORS)
+  let estados = [];
+  try {
+    estados = await ibgeService.estados();
+    populateUF(estados);
+    renderRegions(estados);
+    $("#kpiMunSub").textContent = "municípios · " + estados.length + " UFs monitoradas";
+  } catch (e) {
+    $("#ufSel").innerHTML = '<option value="">Erro ao carregar UFs</option>';
+    toast("Não foi possível carregar a lista de estados do IBGE.");
+  }
 
-  document.getElementById('mLink').href=numCtrl?`https://pncp.gov.br/app/editais/${numCtrl}`:'https://pncp.gov.br/app/editais';
-  document.getElementById('overlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  // KPIs PNCP (podem falhar por CORS — degradam graciosamente)
+  loadKpiPNCP();
 }
 
-function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
-function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal();}
-function showErr(m){document.getElementById('errBox').innerHTML=`<div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--r-md);padding:13px 16px;font-size:14px;color:#991B1B;margin-bottom:14px">${esc(m)}</div>`;}
-function clearErr(){document.getElementById('errBox').innerHTML='';}
+async function loadKpiPNCP() {
+  // propostas abertas (pregão eletrônico como proxy do volume nacional)
+  try {
+    const ab = await pncpService.propostasAbertas({ modalidade: 6 });
+    setKpi("kpiAbertas", "kpiAbertasSk", ab.totalRegistros || 0, fmtInt);
+  } catch (e) { failKpi("kpiAbertas", "kpiAbertasSk"); }
 
-document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+  // publicadas últimos 30 dias + soma estimada da 1ª página (amostra)
+  try {
+    const di = ymd(daysAgo(30)), df = ymd(daysAgo(0));
+    const pub = await pncpService.contratacoesPublicacao({ modalidade: 6, dataInicial: di, dataFinal: df, pagina: 1 });
+    setKpi("kpiPub", "kpiPubSk", pub.totalRegistros || 0, fmtInt);
+    const soma = (pub.data || []).reduce((s, c) => s + (Number(c.valorTotalEstimado) || 0), 0);
+    setKpiText("kpiVal", "kpiValSk", fmtBRLCompact(soma));
+  } catch (e) {
+    failKpi("kpiPub", "kpiPubSk");
+    failKpi("kpiVal", "kpiValSk");
+    updateSrcPill("err");
+  }
+}
+function setKpi(id, skId, val, fmt) {
+  const n = $("#" + id), sk = $("#" + skId);
+  if (sk) sk.remove();
+  n.hidden = false; n.closest(".kpi").classList.remove("loading");
+  countUp(n, val, fmt);
+}
+function setKpiText(id, skId, text) {
+  const n = $("#" + id), sk = $("#" + skId);
+  if (sk) sk.remove();
+  n.hidden = false; n.closest(".kpi").classList.remove("loading");
+  n.textContent = text;
+}
+function failKpi(id, skId) {
+  const n = $("#" + id), sk = $("#" + skId);
+  if (sk) sk.remove();
+  n.hidden = false; n.textContent = "—"; n.style.color = "var(--muted)";
+  n.title = "Indisponível sem proxy (CORS). Configure em ⚙.";
+}
 
-// Inicia busca automática
-doSearch(1);
+function renderRegions(estados) {
+  const byReg = {};
+  estados.forEach((e) => { byReg[e.regiao] = (byReg[e.regiao] || 0) + 1; });
+  const max = Math.max(...Object.values(byReg), 1);
+  const row = $("#regionRow");
+  row.innerHTML = "";
+  Object.entries(byReg).sort((a, b) => b[1] - a[1]).forEach(([reg, n]) => {
+    const card = el("div", { class: "region-card" });
+    card.innerHTML =
+      '<div class="rc-name"><span>' + esc(reg) + '</span><span>' + n + ' UFs</span></div>' +
+      '<div class="rc-num">' + n + '</div>' +
+      '<div class="rc-bar"><i></i></div>';
+    row.appendChild(card);
+    requestAnimationFrame(() => { card.querySelector("i").style.width = ((n / max) * 100) + "%"; });
+  });
+}
+
+// ---- Filtros ----
+function populateUF(estados) {
+  const sel = $("#ufSel");
+  sel.innerHTML = '<option value="">Selecione…</option>' +
+    estados.map((e) => '<option value="' + e.sigla + '" data-nome="' + esc(e.nome) + '">' + esc(e.nome) + ' (' + e.sigla + ')</option>').join("");
+}
+function populateModalidades() {
+  $("#modSel").innerHTML = MODALIDADES.map((m) => '<option value="' + m.id + '"' + (m.id === 0 ? " selected" : "") + '>' + esc(m.nome) + '</option>').join("");
+}
+async function onUFChange() {
+  const sel = $("#ufSel");
+  state.uf = sel.value;
+  state.ufNome = sel.options[sel.selectedIndex] ? (sel.options[sel.selectedIndex].dataset.nome || "") : "";
+  const munSel = $("#munSel");
+  $("#searchBtn").disabled = true;
+  if (!state.uf) {
+    munSel.disabled = true; munSel.innerHTML = '<option value="">Selecione a UF primeiro</option>';
+    return;
+  }
+  munSel.disabled = true; munSel.innerHTML = '<option value="">Carregando municípios…</option>';
+  try {
+    const muns = await ibgeService.municipios(state.uf);
+    munSel.innerHTML = '<option value="">Selecione o município…</option>' +
+      muns.map((m) => '<option value="' + m.id + '" data-nome="' + esc(m.nome) + '">' + esc(m.nome) + '</option>').join("");
+    munSel.disabled = false;
+  } catch (e) {
+    munSel.innerHTML = '<option value="">Erro ao carregar</option>';
+    toast("Falha ao carregar municípios.");
+  }
+}
+function onMunChange() {
+  const sel = $("#munSel");
+  state.munId = sel.value;
+  state.munNome = sel.options[sel.selectedIndex] ? (sel.options[sel.selectedIndex].dataset.nome || "") : "";
+  $("#searchBtn").disabled = !state.munId;
+}
+
+// ---- Busca / lista ----
+async function runSearch(reset = true) {
+  if (state.loading) return;
+  if (!state.munId) { toast("Selecione um município."); return; }
+  state.loading = true;
+  if (reset) { state.pagina = 1; state.items = []; }
+  state.modalidade = parseInt($("#modSel").value, 10);
+  state.periodo = parseInt($("#periodSel").value, 10);
+  $("#searchBtn").disabled = true;
+
+  if (reset) renderLoadingState();
+
+  const di = ymd(daysAgo(state.periodo)), df = ymd(daysAgo(0));
+  const mods = state.modalidade === 0 ? MOD_PRINCIPAIS : [state.modalidade];
+
+  try {
+    let collected = [], total = 0, maxPaginas = 1;
+    for (const mod of mods) {
+      const r = await pncpService.contratacoesPublicacao({
+        uf: state.uf, municipioIbge: state.munId, modalidade: mod,
+        dataInicial: di, dataFinal: df, pagina: state.pagina
+      });
+      collected = collected.concat(r.data || []);
+      total += r.totalRegistros || 0;
+      maxPaginas = Math.max(maxPaginas, r.totalPaginas || 1);
+    }
+    // dedup por numeroControlePNCP, ordena por data de publicação desc
+    const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
+    collected.forEach((c) => { if (!seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
+    state.items.sort((a, b) => new Date(b.dataPublicacaoPncp || 0) - new Date(a.dataPublicacaoPncp || 0));
+    state.totalRegistros = total;
+    state.totalPaginas = maxPaginas;
+    renderResults();
+  } catch (e) {
+    renderErrorState(e);
+  } finally {
+    state.loading = false;
+    $("#searchBtn").disabled = false;
+  }
+}
+
+function renderLoadingState() {
+  $("#results").innerHTML =
+    '<div class="state-box"><div class="spinner"></div>' +
+    '<h4 style="margin-top:20px;">Consultando o PNCP…</h4>' +
+    '<p>Buscando contratações de <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b>.</p></div>';
+}
+
+function renderErrorState(e) {
+  const isCors = !state.proxyBase;
+  $("#results").innerHTML =
+    '<div class="state-box"><div class="sb-ico" style="color:var(--red);">' +
+    '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg></div>' +
+    '<h4>Não foi possível consultar</h4>' +
+    '<p>' + (isCors
+      ? "A API do PNCP não permite chamadas diretas do navegador (bloqueio CORS). Configure um proxy em ⚙ — há uma Edge Function da Vercel pronta no pacote — ou ative os proxies públicos de teste."
+      : "Erro: " + esc(e && e.message ? e.message : "desconhecido") + ". Verifique o proxy configurado.") + '</p>' +
+    '<div class="sb-actions"><button class="btn-ghost" id="openCfgFromErr">Abrir configurações</button>' +
+    '<button class="btn-ghost" id="retryBtn">Tentar de novo</button></div></div>';
+  $("#openCfgFromErr").onclick = openDrawer;
+  $("#retryBtn").onclick = () => runSearch(true);
+}
+
+function renderResults() {
+  const root = $("#results");
+  if (!state.items.length) {
+    root.innerHTML =
+      '<div class="state-box"><div class="sb-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>' +
+      '<h4>Nenhuma contratação encontrada</h4>' +
+      '<p>Não há registros para <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b> no período e modalidade selecionados. Tente ampliar o período ou trocar a modalidade para “Principais”.</p></div>';
+    return;
+  }
+
+  const somaEst = state.items.reduce((s, c) => s + (Number(c.valorTotalEstimado) || 0), 0);
+  const somaHom = state.items.reduce((s, c) => s + (Number(c.valorTotalHomologado) || 0), 0);
+
+  root.innerHTML =
+    '<div class="results-bar">' +
+      '<h3>' + esc(state.munNome) + ' <small>/ ' + esc(state.uf) + ' · ' + state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '') + '</small></h3>' +
+      '<div class="summary-chips">' +
+        '<span class="chip">Estimado: <b>' + fmtBRLCompact(somaEst) + '</b></span>' +
+        '<span class="chip">Homologado: <b>' + fmtBRLCompact(somaHom) + '</b></span>' +
+        '<span class="chip">Período: <b>' + state.periodo + 'd</b></span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card-grid" id="cardGrid"></div>' +
+    '<div class="load-more-wrap" id="loadMoreWrap"></div>';
+
+  const grid = $("#cardGrid");
+  state.items.forEach((c, i) => grid.appendChild(buildCard(c, i)));
+
+  if (state.pagina < state.totalPaginas) {
+    const btn = el("button", { class: "btn-ghost" }, "Carregar mais (página " + (state.pagina + 1) + " de " + state.totalPaginas + ")");
+    btn.onclick = () => { state.pagina += 1; runSearch(false); };
+    $("#loadMoreWrap").appendChild(btn);
+  }
+}
+
+function statusTag(c) {
+  if (Number(c.valorTotalHomologado) > 0) return { cls: "st-done", nome: "Homologada" };
+  const s = SITUACAO[c.situacaoCompraId];
+  if (s) return { cls: s.cls, nome: s.nome };
+  return { cls: "st-1", nome: c.situacaoCompraNome || "Em andamento" };
+}
+
+function buildCard(c, idx) {
+  const tag = statusTag(c);
+  const card = el("div", { class: "lic-card", style: "animation-delay:" + Math.min(idx * 0.035, 0.5) + "s" });
+  const valor = Number(c.valorTotalHomologado) > 0 ? c.valorTotalHomologado : c.valorTotalEstimado;
+  const valLabel = Number(c.valorTotalHomologado) > 0 ? "Valor homologado" : "Valor estimado";
+  const unidade = c.unidadeOrgao || {};
+  card.innerHTML =
+    '<div class="lic-card-head">' +
+      '<span class="badge b-mod">' + esc(c.modalidadeNome || "Modalidade " + c.modalidadeId) + '</span>' +
+      '<span class="st-tag ' + tag.cls + '"><span class="st-dot"></span>' + esc(tag.nome) + '</span>' +
+    '</div>' +
+    '<div class="lic-obj">' + esc(c.objetoCompra || "Objeto não informado") + '</div>' +
+    '<div class="lic-meta">' +
+      '<div class="lm-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>' + esc(c.orgaoEntidade ? c.orgaoEntidade.razaoSocial : (unidade.nomeUnidade || "—")) + '</div>' +
+      '<div class="lm-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' + esc(unidade.municipioNome || state.munNome) + ' · ' + esc(unidade.ufSigla || state.uf) + '</div>' +
+      '<div class="lm-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Publicada ' + fmtDate(c.dataPublicacaoPncp) + '</div>' +
+    '</div>' +
+    '<div class="lic-foot">' +
+      '<div class="lic-val"><span class="lv-label">' + valLabel + '</span><span class="lv-num">' + fmtBRL(valor) + '</span></div>' +
+      '<span class="lic-open">Ver ciclo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>' +
+    '</div>';
+  card.onclick = () => openModal(c);
+  return card;
+}
+
+// ---- Status lifecycle / timeline ----
+function buildTimeline(c) {
+  const now = Date.now();
+  const pub = c.dataPublicacaoPncp ? new Date(c.dataPublicacaoPncp).getTime() : null;
+  const abert = c.dataAberturaProposta ? new Date(c.dataAberturaProposta).getTime() : null;
+  const encer = c.dataEncerramentoProposta ? new Date(c.dataEncerramentoProposta).getTime() : null;
+  const homol = Number(c.valorTotalHomologado) > 0;
+  const sit = SITUACAO[c.situacaoCompraId];
+  const terminal = sit && sit.terminal;
+
+  // ícones por etapa
+  const ICO = {
+    plan: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    pub: '<path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+    prop: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+    julg: '<path d="m14 13-7.5 7.5a2.12 2.12 0 0 1-3-3L11 10"/><path d="m16 16 6-6M8 8l6-6M9 7l8 8M21 11l-8-8"/>',
+    homol: '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>'
+  };
+
+  const steps = [
+    { key: "pub", label: "Divulgação", ico: ICO.pub, date: pub, done: !!pub },
+    { key: "prop", label: "Propostas", ico: ICO.prop, date: abert, done: !!(abert && now >= abert) },
+    { key: "julg", label: "Julgamento", ico: ICO.julg, date: encer, done: !!(encer && now > encer) },
+    { key: "homol", label: "Homologação", ico: ICO.homol, date: null, done: homol }
+  ];
+
+  // determinar etapa atual
+  let currentIdx = -1;
+  if (homol) currentIdx = 3;
+  else if (encer && now > encer) currentIdx = 2;       // aguardando julgamento/homolog.
+  else if (abert && now >= abert) currentIdx = 1;       // recebendo propostas
+  else if (pub) currentIdx = 0;                          // divulgada
+  for (let i = 0; i <= currentIdx; i++) steps[i].done = true;
+
+  let html = '<div class="timeline">';
+  steps.forEach((s, i) => {
+    let cls = "tl-step";
+    if (terminal) {
+      if (i < currentIdx) cls += " done";
+      else if (i === currentIdx) cls += " terminal";
+    } else {
+      if (s.done && i < currentIdx) cls += " done";
+      else if (i === currentIdx) cls += (homol && i === 3) ? " done" : " current";
+      else if (s.done) cls += " done";
+    }
+    html +=
+      '<div class="' + cls + '">' +
+        '<div class="tl-line"></div>' +
+        '<div class="tl-node"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + s.ico + '</svg></div>' +
+        '<div class="tl-label">' + s.label + '</div>' +
+        (s.date ? '<div class="tl-date">' + fmtDateShort(new Date(s.date).toISOString()) + '</div>' : '') +
+      '</div>';
+  });
+  html += '</div>';
+
+  if (terminal) {
+    html += '<div class="terminal-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Esta contratação foi <b>' + esc(sit.nome.toLowerCase()) + '</b>.</div>';
+  }
+  return html;
+}
+
+// ---- Modal ----
+function openModal(c) {
+  const unidade = c.unidadeOrgao || {};
+  const orgao = c.orgaoEntidade || {};
+  const tag = statusTag(c);
+  const pncpUrl = buildPncpUrl(c.numeroControlePNCP);
+
+  const detailItems = [
+    { k: "Nº de controle PNCP", v: c.numeroControlePNCP || "—", mono: true },
+    { k: "Processo", v: c.processo || "—", mono: true },
+    { k: "Modalidade", v: c.modalidadeNome || ("Modalidade " + c.modalidadeId) },
+    { k: "Modo de disputa", v: c.modoDisputaNome || "—" },
+    { k: "Situação", v: c.situacaoCompraNome || tag.nome },
+    { k: "Registro de preços", v: c.srp ? "Sim (SRP)" : "Não" },
+    { k: "Abertura das propostas", v: fmtDate(c.dataAberturaProposta) },
+    { k: "Encerramento das propostas", v: fmtDate(c.dataEncerramentoProposta) },
+    { k: "Amparo legal", v: c.amparoLegal ? (c.amparoLegal.nome || c.amparoLegal.descricao || "—") : "—", full: true }
+  ];
+  if (c.informacaoComplementar) detailItems.push({ k: "Informação complementar", v: c.informacaoComplementar, full: true });
+
+  const valEst = Number(c.valorTotalEstimado) || 0;
+  const valHom = Number(c.valorTotalHomologado) || 0;
+
+  const modal = $("#modal");
+  modal.innerHTML =
+    '<div class="modal-head">' +
+      '<button class="modal-close" id="modalCloseBtn" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '<div class="mh-badges">' +
+        '<span class="badge b-mod">' + esc(c.modalidadeNome || "Modalidade " + c.modalidadeId) + '</span>' +
+        '<span class="st-tag ' + tag.cls + '" style="padding:4px 0;"><span class="st-dot"></span>' + esc(tag.nome) + '</span>' +
+      '</div>' +
+      '<h3 id="modalTitle">' + esc(c.objetoCompra || "Contratação pública") + '</h3>' +
+      '<div class="mh-org"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>' +
+        esc(orgao.razaoSocial || unidade.nomeUnidade || "Órgão não informado") + ' · ' + esc(unidade.municipioNome || state.munNome) + '/' + esc(unidade.ufSigla || state.uf) + '</div>' +
+    '</div>' +
+    '<div class="modal-body">' +
+      '<div class="section-title">Evolução do status</div>' +
+      buildTimeline(c) +
+      '<div class="section-title">Valores</div>' +
+      '<div class="detail-grid">' +
+        '<div class="detail-item gold"><div class="di-k">Valor total estimado</div><div class="di-v">' + fmtBRL(valEst) + '</div></div>' +
+        '<div class="detail-item ' + (valHom > 0 ? "green" : "") + '"><div class="di-k">Valor total homologado</div><div class="di-v">' + (valHom > 0 ? fmtBRL(valHom) : "—") + '</div></div>' +
+      '</div>' +
+      '<div class="section-title">Dados da contratação</div>' +
+      '<div class="detail-grid">' +
+        detailItems.map((d) =>
+          '<div class="detail-item' + (d.full ? " full" : "") + '"><div class="di-k">' + esc(d.k) + '</div><div class="di-v' + (d.mono ? " mono" : "") + '">' + esc(d.v) + '</div></div>'
+        ).join("") +
+      '</div>' +
+      '<div class="section-title">Itens da contratação</div>' +
+      '<div class="items-wrap" id="itemsWrap"><div class="items-mini-load"><div class="spinner" style="width:26px;height:26px;"></div><div style="margin-top:10px;">Carregando itens…</div></div></div>' +
+    '</div>' +
+    '<div class="modal-foot">' +
+      (pncpUrl ? '<a class="btn-link primary" href="' + esc(pncpUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>Abrir no PNCP</a>' : '') +
+      (c.linkSistemaOrigem ? '<a class="btn-link" href="' + esc(c.linkSistemaOrigem) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Sistema de origem</a>' : '') +
+      '<button class="btn-link" id="modalCloseFoot">Fechar</button>' +
+    '</div>';
+
+  $("#modalOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#modalCloseBtn").onclick = closeModal;
+  $("#modalCloseFoot").onclick = closeModal;
+
+  loadModalItems(c);
+}
+
+async function loadModalItems(c) {
+  const wrap = $("#itemsWrap");
+  try {
+    const itens = await pncpService.itens(c.numeroControlePNCP);
+    if (!itens || !itens.length) {
+      wrap.innerHTML = '<div class="items-mini-load">Sem itens detalhados disponíveis para esta contratação.</div>';
+      return;
+    }
+    const rows = itens.slice(0, 50).map((it, i) =>
+      '<tr><td class="num">' + (it.numeroItem || (i + 1)) + '</td>' +
+      '<td>' + esc(it.descricao || it.materialOuServicoNome || "—") + '</td>' +
+      '<td class="num">' + fmtInt(it.quantidade) + (it.unidadeMedida ? " " + esc(it.unidadeMedida) : "") + '</td>' +
+      '<td class="num">' + fmtBRL(it.valorUnitarioEstimado) + '</td>' +
+      '<td class="num">' + fmtBRL(it.valorTotal || (it.valorUnitarioEstimado * it.quantidade)) + '</td></tr>'
+    ).join("");
+    wrap.innerHTML =
+      '<table class="items-table"><thead><tr><th>#</th><th>Descrição</th><th style="text-align:right;">Qtd.</th><th style="text-align:right;">Vlr. unit.</th><th style="text-align:right;">Total</th></tr></thead><tbody>' +
+      rows + '</tbody></table>';
+  } catch (e) {
+    wrap.innerHTML = '<div class="items-mini-load">Itens indisponíveis no momento (a consulta de itens usa outra rota do PNCP que também depende do proxy).</div>';
+  }
+}
+
+function buildPncpUrl(num) {
+  const m = /^(\d{14})-\d+-(\d+)\/(\d{4})$/.exec(num || "");
+  if (!m) return null;
+  return "https://pncp.gov.br/app/editais/" + m[1] + "/" + m[3] + "/" + parseInt(m[2], 10);
+}
+
+function closeModal() {
+  $("#modalOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+// ---- Config drawer ----
+function openDrawer() {
+  $("#proxyInput").value = state.proxyBase;
+  $("#publicProxyChk").checked = state.allowPublic;
+  $("#drawerOverlay").classList.add("open");
+  $("#drawer").classList.add("open");
+}
+function closeDrawer() {
+  $("#drawerOverlay").classList.remove("open");
+  $("#drawer").classList.remove("open");
+}
+async function saveCfg() {
+  const proxy = $("#proxyInput").value.trim();
+  state.proxyBase = proxy;
+  state.allowPublic = $("#publicProxyChk").checked;
+  localStorage.setItem(CFG.LS.PROXY, proxy);
+  localStorage.setItem(CFG.LS.PUBLIC, state.allowPublic ? "1" : "0");
+  state.cache.clear();
+  toast("Configuração salva. Testando conexão…");
+  // teste rápido
+  try {
+    await pncpService.propostasAbertas({ modalidade: 6 });
+    toast("✓ Conexão com o PNCP funcionando via " + (state.lastStrategy === "Direct" ? "conexão direta" : state.lastStrategy === "Proxy" ? "proxy" : "fallback") + ".");
+    loadKpiPNCP();
+  } catch (e) {
+    toast("Ainda sem conexão. Verifique a URL do proxy.");
+  }
+}
+
+/* ============================== 7. CONTROLLER ============================== */
+function init() {
+  populateModalidades();
+  loadHero();
+
+  $("#ufSel").addEventListener("change", onUFChange);
+  $("#munSel").addEventListener("change", onMunChange);
+  $("#searchBtn").addEventListener("click", () => runSearch(true));
+  $("#cfgBtn").addEventListener("click", openDrawer);
+  $("#closeDrawer").addEventListener("click", closeDrawer);
+  $("#drawerOverlay").addEventListener("click", closeDrawer);
+  $("#saveCfg").addEventListener("click", saveCfg);
+  $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); } });
+
+  if (state.proxyBase) updateSrcPill("warn");
+}
+
+document.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
