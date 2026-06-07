@@ -162,6 +162,58 @@
   @keyframes pulseNew { 0%,100% { box-shadow: 0 0 0 0 rgba(248,113,106,0.5); } 50% { box-shadow: 0 0 0 5px rgba(248,113,106,0); } }
   .lic-card.is-new { border-color: rgba(248,113,106,0.4); }
 
+  /* favorite star on cards */
+  .lic-head-right { display: flex; align-items: center; gap: 9px; }
+  .fav-star {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted); transition: 0.16s; flex-shrink: 0;
+  }
+  .fav-star:hover { color: var(--gold); border-color: var(--gold); }
+  .fav-star.on { color: var(--gold); border-color: var(--gold); background: rgba(245,196,81,0.12); }
+  .fav-star.on svg { fill: var(--gold); }
+
+  /* analysis overlay */
+  .an-context {
+    border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; background: var(--surface);
+    margin-bottom: 18px;
+  }
+  .an-context .ac-obj { font-size: 0.95rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; }
+  .an-context .ac-meta { font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 14px; flex-wrap: wrap; }
+  .dropzone {
+    border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 30px 20px; text-align: center;
+    transition: 0.18s; cursor: pointer; background: var(--surface);
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone .dz-ico { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; margin: 0 auto 14px; background: var(--surface-2); color: var(--accent); }
+  .dropzone h4 { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
+  .dropzone p { font-size: 0.85rem; color: var(--muted); }
+  .file-list { margin: 16px 0; display: flex; flex-direction: column; gap: 8px; }
+  .file-row { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+  .file-row svg.fr-ico { color: var(--red); flex-shrink: 0; }
+  .file-row .fr-name { flex: 1; font-size: 0.86rem; word-break: break-all; }
+  .file-row .fr-size { font-size: 0.76rem; color: var(--muted); font-family: var(--font-mono); }
+  .file-row .fr-del { color: var(--muted); cursor: pointer; }
+  .file-row .fr-del:hover { color: var(--red); }
+
+  /* risk report */
+  .risk-head { display: flex; align-items: center; gap: 18px; padding: 18px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); margin-bottom: 8px; }
+  .risk-gauge { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; position: relative; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; }
+  .risk-gauge span { position: relative; z-index: 1; }
+  .risk-head .rh-txt h4 { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+  .risk-head .rh-txt p { font-size: 0.86rem; color: var(--text-dim); }
+  .risk-low { color: var(--green); } .risk-med { color: var(--amber); } .risk-high { color: var(--red); }
+  .an-block { margin-top: 18px; }
+  .an-block .anb-title { font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 11px; display: flex; align-items: center; gap: 8px; }
+  .an-list { display: flex; flex-direction: column; gap: 8px; }
+  .an-li { display: flex; gap: 10px; padding: 11px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.88rem; line-height: 1.45; }
+  .an-li svg { flex-shrink: 0; margin-top: 2px; }
+  .an-li.ok svg { color: var(--green); } .an-li.warn svg { color: var(--amber); } .an-li.risk svg { color: var(--red); } .an-li.info svg { color: var(--accent-2); }
+  .an-pill { font-size: 0.72rem; padding: 2px 9px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .an-pill.alta { background: rgba(248,113,106,0.16); color: var(--red); }
+  .an-pill.media { background: rgba(251,155,58,0.16); color: var(--amber); }
+  .an-pill.baixa { background: rgba(52,211,153,0.16); color: var(--green); }
+  .an-disclaimer { margin-top: 20px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
   /* alerts drawer reuse drawer styles; specific bits */
   .alert-item {
     border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px;
@@ -557,6 +609,10 @@
     <div class="src-pill" id="srcPill" title="Status da conexão com a API do PNCP">
       <span class="src-dot" id="srcDot"></span><span id="srcText">Aguardando consulta</span>
     </div>
+    <button class="icon-btn alert-bell" id="favsBtn" title="Meus favoritos" aria-label="Favoritos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      <span class="bell-badge" id="favBadge" hidden>0</span>
+    </button>
     <button class="icon-btn alert-bell" id="alertsBtn" title="Meus alertas por palavra-chave" aria-label="Alertas">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span class="bell-badge" id="bellBadge" hidden>0</span>
@@ -711,6 +767,10 @@
   </label>
   <p class="hint">Usa serviços como <code>corsproxy.io</code> / <code>allorigins</code>. Instáveis e sem garantia — não use em produção.</p>
 
+  <label for="analiseInput" style="margin-top:20px;">Endpoint de Análise IA (opcional)</label>
+  <input class="ctrl" id="analiseInput" placeholder="https://seu-app.vercel.app/api/analise" />
+  <p class="hint">Habilita a <b>Análise de Risco por IA</b> dos PDFs do processo. A chave da Anthropic fica <b>no servidor</b> (função <code>/api/analise.js</code>), nunca no navegador. Sem isso, a análise fica indisponível.</p>
+
   <div class="section-title" style="margin-top:24px;">Diagnóstico de conexão</div>
   <div class="strat-list" id="stratList">
     <div class="strat-item" id="stratProxy"><span class="si-dot"></span><span>Proxy configurado</span></div>
@@ -735,6 +795,22 @@
     <button class="btn-ghost" id="closeAlerts">Fechar</button>
   </div>
 </aside>
+
+<!-- ===================== FAVORITES DRAWER ===================== -->
+<div class="drawer-overlay" id="favsOverlay"></div>
+<aside class="drawer" id="favsDrawer" aria-label="Meus favoritos">
+  <h3>Propostas favoritas</h3>
+  <p class="dsub">Os registros que você marcou com ⭐ para aprofundar a análise depois. Ficam salvos neste navegador.</p>
+  <div id="favsList"></div>
+  <div class="drawer-actions">
+    <button class="btn-ghost" id="closeFavs" style="flex:1;">Fechar</button>
+  </div>
+</aside>
+
+<!-- ===================== ANALYSIS OVERLAY ===================== -->
+<div class="modal-overlay" id="analiseOverlay" role="dialog" aria-modal="true">
+  <div class="modal" id="analiseModal" style="max-width:860px;"></div>
+</div>
 
 <!-- ===================== FOOTER ===================== -->
 <footer class="foot">
@@ -774,7 +850,7 @@
 const CFG = {
   PNCP_API: "https://pncp.gov.br/api",          // base do PNCP (consulta + pncp)
   IBGE_API: "https://servicodados.ibge.gov.br/api/v1/localidades",
-  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts" },
+  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts", FAVS: "pncp_favs", ANALISE: "pncp_analise_endpoint" },
   HTTP_TIMEOUT: 18000,
   PAGE_SIZE: 20,
   CACHE_TTL: 1000 * 60 * 10,                      // 10 min
@@ -841,7 +917,9 @@ const state = {
   munList: [],
   munByName: new Map(),
   alerts: [],
-  matchedAlert: null
+  matchedAlert: null,
+  favs: [],
+  analiseEndpoint: localStorage.getItem(CFG.LS.ANALISE) || ""
 };
 
 function loadAlerts() {
@@ -851,6 +929,14 @@ function loadAlerts() {
 }
 function saveAlerts() {
   try { localStorage.setItem(CFG.LS.ALERTS, JSON.stringify(state.alerts)); } catch (e) {}
+}
+function loadFavs() {
+  try { state.favs = JSON.parse(localStorage.getItem(CFG.LS.FAVS) || "[]"); }
+  catch (e) { state.favs = []; }
+  if (!Array.isArray(state.favs)) state.favs = [];
+}
+function saveFavs() {
+  try { localStorage.setItem(CFG.LS.FAVS, JSON.stringify(state.favs)); } catch (e) {}
 }
 
 /* ============================== 3. UTIL ============================== */
@@ -1461,7 +1547,10 @@ function buildCard(c, idx) {
   card.innerHTML =
     '<div class="lic-card-head">' +
       '<span class="badge b-mod">' + esc(c.modalidadeNome || "Modalidade " + c.modalidadeId) + '</span>' +
-      (c._isNew ? '<span class="badge b-new">NOVO</span>' : '<span class="st-tag ' + tag.cls + '"><span class="st-dot"></span>' + esc(tag.nome) + '</span>') +
+      '<div class="lic-head-right">' +
+        '<button class="fav-star' + (isFav(c) ? " on" : "") + '" title="Favoritar" aria-label="Favoritar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>' +
+        (c._isNew ? '<span class="badge b-new">NOVO</span>' : '<span class="st-tag ' + tag.cls + '"><span class="st-dot"></span>' + esc(tag.nome) + '</span>') +
+      '</div>' +
     '</div>' +
     '<div class="lic-obj">' + esc(c.objetoCompra || "Objeto não informado") + '</div>' +
     '<div class="lic-meta">' +
@@ -1474,6 +1563,13 @@ function buildCard(c, idx) {
       '<span class="lic-open">Ver ciclo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>' +
     '</div>';
   card.onclick = () => openModal(c);
+  const star = card.querySelector(".fav-star");
+  if (star) star.onclick = (e) => {
+    e.stopPropagation();
+    const now = toggleFav(c);
+    star.classList.toggle("on", now);
+    toast(now ? "⭐ Adicionado aos favoritos." : "Removido dos favoritos.");
+  };
   return card;
 }
 
@@ -1623,13 +1719,23 @@ function renderModalBody(c, ref) {
   if (oldFoot) oldFoot.remove();
   const foot = el("div", { class: "modal-foot" });
   foot.innerHTML =
-    (pncpUrl ? '<a class="btn-link primary" href="' + esc(pncpUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>Abrir no PNCP</a>' : '') +
-    (c.linkSistemaOrigem ? '<a class="btn-link" href="' + esc(c.linkSistemaOrigem) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Sistema de origem</a>' : '') +
+    '<button class="btn-link" id="modalFavBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="' + (isFav(c) ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>' + (isFav(c) ? "Favoritado" : "Favoritar") + '</button>' +
+    '<button class="btn-link primary" id="modalAnaliseBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>Analisar com IA</button>' +
+    (pncpUrl ? '<a class="btn-link" href="' + esc(pncpUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>PNCP</a>' : '') +
+    (c.linkSistemaOrigem ? '<a class="btn-link" href="' + esc(c.linkSistemaOrigem) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Origem</a>' : '') +
     '<button class="btn-link" id="modalCloseFoot">Fechar</button>';
   $("#modal").appendChild(foot);
 
   $("#modalCloseBtn").onclick = closeModal;
   $("#modalCloseFoot").onclick = closeModal;
+  $("#modalFavBtn").onclick = () => {
+    const now = toggleFav(c);
+    const b = $("#modalFavBtn");
+    b.querySelector("svg").setAttribute("fill", now ? "currentColor" : "none");
+    b.childNodes[b.childNodes.length - 1].textContent = now ? "Favoritado" : "Favoritar";
+    toast(now ? "⭐ Adicionado aos favoritos." : "Removido dos favoritos.");
+  };
+  $("#modalAnaliseBtn").onclick = () => openAnalise(c);
 
   loadModalItems(ref);
   loadModalArquivos(ref);
@@ -1691,6 +1797,7 @@ function closeModal() {
 function openDrawer() {
   $("#proxyInput").value = state.proxyBase;
   $("#publicProxyChk").checked = state.allowPublic;
+  $("#analiseInput").value = state.analiseEndpoint;
   $("#drawerOverlay").classList.add("open");
   $("#drawer").classList.add("open");
 }
@@ -1702,8 +1809,10 @@ async function saveCfg() {
   const proxy = $("#proxyInput").value.trim();
   state.proxyBase = proxy;
   state.allowPublic = $("#publicProxyChk").checked;
+  state.analiseEndpoint = $("#analiseInput").value.trim();
   localStorage.setItem(CFG.LS.PROXY, proxy);
   localStorage.setItem(CFG.LS.PUBLIC, state.allowPublic ? "1" : "0");
+  localStorage.setItem(CFG.LS.ANALISE, state.analiseEndpoint);
   state.cache.clear();
   toast("Configuração salva. Testando conexão…");
   // teste rápido
@@ -1799,13 +1908,261 @@ function runAlert(id) {
 function openAlerts() { renderAlertsList(); $("#alertsOverlay").classList.add("open"); $("#alertsDrawer").classList.add("open"); }
 function closeAlerts() { $("#alertsOverlay").classList.remove("open"); $("#alertsDrawer").classList.remove("open"); }
 
+/* ============================== 6c. FAVORITOS ============================== */
+function favKey(item) {
+  return item.numeroControlePNCP || ((item._cnpj || "") + "-" + (item._ano || "") + "-" + (item._seq || ""));
+}
+function isFav(item) {
+  const k = favKey(item);
+  return state.favs.some((f) => favKey(f) === k);
+}
+function toggleFav(item) {
+  const k = favKey(item);
+  const idx = state.favs.findIndex((f) => favKey(f) === k);
+  if (idx >= 0) { state.favs.splice(idx, 1); }
+  else {
+    const snap = Object.assign({}, item);
+    delete snap._isNew;
+    snap._favAt = Date.now();
+    state.favs.unshift(snap);
+  }
+  saveFavs(); updateFavBadge();
+  return idx < 0; // true se virou favorito
+}
+function updateFavBadge() {
+  const b = $("#favBadge");
+  if (state.favs.length) { b.hidden = false; b.textContent = state.favs.length > 99 ? "99+" : String(state.favs.length); }
+  else b.hidden = true;
+}
+function renderFavsList() {
+  const root = $("#favsList");
+  if (!root) return;
+  if (!state.favs.length) {
+    root.innerHTML =
+      '<div class="alerts-empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>' +
+      '<div>Nenhum favorito ainda.</div><div style="margin-top:6px;font-size:0.82rem;">Clique na ⭐ de qualquer card para separar as propostas de interesse.</div></div>';
+    return;
+  }
+  root.innerHTML = state.favs.map((f, i) => {
+    const u = f.unidadeOrgao || {};
+    const val = Number(f.valorTotalHomologado) > 0 ? f.valorTotalHomologado : f.valorTotalEstimado;
+    return '<div class="alert-item" data-i="' + i + '">' +
+      '<div class="ai-top"><div class="ai-q" style="font-size:0.9rem;line-height:1.35;">' + esc((f.objetoCompra || "Contratação").slice(0, 90)) + (f.objetoCompra && f.objetoCompra.length > 90 ? '…' : '') + '</div></div>' +
+      '<div class="ai-scope"><span>' + esc(u.municipioNome || "—") + '/' + esc(u.ufSigla || "—") + '</span><span>' + esc(f.modalidadeNome || "Edital") + '</span><span style="color:var(--gold);">' + fmtBRLCompact(val) + '</span></div>' +
+      '<div class="ai-actions"><button class="ai-btn run" data-act="open">Ver detalhes</button><button class="ai-btn" style="border-color:var(--accent);color:var(--accent);" data-act="analise">Analisar IA</button><button class="ai-btn del" data-act="del">Remover</button></div>' +
+    '</div>';
+  }).join("");
+  $$(".alert-item", root).forEach((node) => {
+    const f = state.favs[parseInt(node.dataset.i, 10)];
+    node.querySelector('[data-act="open"]').onclick = () => { closeFavs(); openModal(f); };
+    node.querySelector('[data-act="analise"]').onclick = () => { closeFavs(); openAnalise(f); };
+    node.querySelector('[data-act="del"]').onclick = () => { toggleFav(f); renderFavsList(); };
+  });
+}
+function openFavs() { renderFavsList(); $("#favsOverlay").classList.add("open"); $("#favsDrawer").classList.add("open"); }
+function closeFavs() { $("#favsOverlay").classList.remove("open"); $("#favsDrawer").classList.remove("open"); }
+
+/* ============================== 6d. ANÁLISE DE RISCO (IA) ============================== */
+const ANALISE_MAX_BYTES = 3.5 * 1024 * 1024; // limite seguro p/ body de função serverless (~4.5MB após base64)
+const analiseState = { item: null, files: [] };
+
+const analiseService = {
+  async analisar(contexto, arquivos) {
+    if (!state.analiseEndpoint) throw new Error("SEM_ENDPOINT");
+    const res = await timedFetch(state.analiseEndpoint.replace(/\/+$/, ""), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contexto, arquivos })
+    });
+    if (!res.ok) {
+      let msg = "HTTP " + res.status;
+      try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+};
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1] || "");
+    r.onerror = () => reject(new Error("Falha ao ler " + file.name));
+    r.readAsDataURL(file);
+  });
+}
+function fmtBytes(n) {
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + " MB";
+  if (n >= 1024) return (n / 1024).toFixed(0) + " KB";
+  return n + " B";
+}
+
+function openAnalise(item) {
+  analiseState.item = item;
+  analiseState.files = [];
+  const u = item.unidadeOrgao || {};
+  const orgao = item.orgaoEntidade || {};
+  const val = Number(item.valorTotalHomologado) > 0 ? item.valorTotalHomologado : item.valorTotalEstimado;
+
+  const noEndpoint = !state.analiseEndpoint;
+  const modal = $("#analiseModal");
+  modal.innerHTML =
+    '<div class="modal-head"><button class="modal-close" id="anClose" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '<div class="mh-badges"><span class="badge b-mode">Análise de Risco · IA</span></div>' +
+      '<h3>Análise inteligente da licitação</h3>' +
+      '<div class="mh-org"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>' + esc(orgao.razaoSocial || u.nomeUnidade || "—") + ' · ' + esc(u.municipioNome || "—") + '/' + esc(u.ufSigla || "—") + '</div>' +
+    '</div>' +
+    '<div class="modal-body" id="anBody">' +
+      '<div class="an-context"><div class="ac-obj">' + esc(item.objetoCompra || "—") + '</div>' +
+        '<div class="ac-meta"><span>' + esc(item.modalidadeNome || "Edital") + '</span><span style="color:var(--gold);">' + fmtBRL(val) + '</span><span>' + esc(item.numeroControlePNCP || "") + '</span></div></div>' +
+      (noEndpoint
+        ? '<div class="state-box" style="padding:40px 24px;"><div class="sb-ico" style="color:var(--amber);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>' +
+          '<h4>Configure o endpoint de Análise IA</h4><p>A análise envia os PDFs para o Claude por uma função serverless (com sua chave Anthropic protegida no servidor). Configure a URL em ⚙ e suba o arquivo <code>api/analise.js</code> na Vercel.</p>' +
+          '<div class="sb-actions"><button class="btn-ghost" id="anOpenCfg">Abrir configurações</button></div></div>'
+        : '<div class="an-block"><div class="anb-title">1 · Anexe os documentos do processo (PDF)</div>' +
+            '<div class="dropzone" id="dropzone"><div class="dz-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>' +
+              '<h4>Arraste os PDFs aqui ou clique para selecionar</h4><p>Edital, termo de referência, anexos. Limite ~3,5 MB no total (limite do servidor).</p>' +
+              '<input type="file" id="fileInput" accept="application/pdf" multiple hidden /></div>' +
+            '<div class="file-list" id="fileList"></div>' +
+            '<button class="btn-primary" id="runAnalise" style="grid-column:unset;width:100%;margin-top:6px;" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg> Analisar com IA</button>' +
+          '</div>' +
+          '<div id="anResult"></div>') +
+    '</div>';
+
+  $("#analiseOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#anClose").onclick = closeAnalise;
+  if (noEndpoint) { $("#anOpenCfg").onclick = () => { closeAnalise(); openDrawer(); }; return; }
+
+  const dz = $("#dropzone"), fi = $("#fileInput");
+  dz.onclick = () => fi.click();
+  dz.ondragover = (e) => { e.preventDefault(); dz.classList.add("drag"); };
+  dz.ondragleave = () => dz.classList.remove("drag");
+  dz.ondrop = (e) => { e.preventDefault(); dz.classList.remove("drag"); addAnFiles(e.dataTransfer.files); };
+  fi.onchange = () => addAnFiles(fi.files);
+  $("#runAnalise").onclick = runAnalise;
+}
+
+function addAnFiles(fileList) {
+  for (const f of Array.from(fileList)) {
+    if (f.type !== "application/pdf") { toast("Só PDFs são aceitos: " + esc(f.name)); continue; }
+    if (analiseState.files.some((x) => x.name === f.name && x.size === f.size)) continue;
+    analiseState.files.push(f);
+  }
+  const total = analiseState.files.reduce((s, f) => s + f.size, 0);
+  if (total > ANALISE_MAX_BYTES) toast("Atenção: total acima de ~3,5 MB pode falhar no servidor. Reduza os PDFs.");
+  renderAnFiles();
+}
+function renderAnFiles() {
+  const wrap = $("#fileList");
+  if (!wrap) return;
+  wrap.innerHTML = analiseState.files.map((f, i) =>
+    '<div class="file-row"><svg class="fr-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' +
+    '<span class="fr-name">' + esc(f.name) + '</span><span class="fr-size">' + fmtBytes(f.size) + '</span>' +
+    '<svg class="fr-del" data-i="' + i + '" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></div>'
+  ).join("");
+  $$(".fr-del", wrap).forEach((b) => b.onclick = () => { analiseState.files.splice(parseInt(b.dataset.i, 10), 1); renderAnFiles(); });
+  $("#runAnalise").disabled = analiseState.files.length === 0;
+}
+
+async function runAnalise() {
+  const btn = $("#runAnalise");
+  btn.disabled = true;
+  $("#anResult").innerHTML = '<div class="state-box" style="padding:44px 24px;margin-top:18px;"><div class="spinner"></div><h4 style="margin-top:18px;">Analisando o processo…</h4><p>O Claude está lendo os documentos e cruzando com os dados da licitação. Pode levar alguns segundos.</p></div>';
+  try {
+    const arquivos = [];
+    for (const f of analiseState.files) {
+      arquivos.push({ nome: f.name, tipo: f.type, dados: await fileToBase64(f) });
+    }
+    const it = analiseState.item, u = it.unidadeOrgao || {}, orgao = it.orgaoEntidade || {};
+    const contexto = {
+      objeto: it.objetoCompra || "", modalidade: it.modalidadeNome || "",
+      orgao: orgao.razaoSocial || u.nomeUnidade || "", municipio: u.municipioNome || "", uf: u.ufSigla || "",
+      valorEstimado: it.valorTotalEstimado || null, numeroControle: it.numeroControlePNCP || "",
+      dataAbertura: it.dataAberturaProposta || null, dataEncerramento: it.dataEncerramentoProposta || null
+    };
+    const resp = await analiseService.analisar(contexto, arquivos);
+    const data = resp && (resp.analise || resp);
+    renderRiskReport(data);
+  } catch (e) {
+    const msg = e && e.message === "SEM_ENDPOINT" ? "Endpoint de análise não configurado (⚙)." : (e && e.message ? e.message : "Falha na análise.");
+    $("#anResult").innerHTML = '<div class="state-box" style="padding:40px 24px;margin-top:18px;"><div class="sb-ico" style="color:var(--red);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg></div><h4>Não foi possível analisar</h4><p>' + esc(msg) + '</p></div>';
+  } finally {
+    btn.disabled = analiseState.files.length === 0;
+  }
+}
+
+function nivelClass(nivel) {
+  const n = (nivel || "").toLowerCase();
+  if (n.indexOf("alt") >= 0) return "risk-high";
+  if (n.indexOf("med") >= 0 || n.indexOf("méd") >= 0) return "risk-med";
+  return "risk-low";
+}
+function sevPill(s) {
+  const v = (s || "").toLowerCase();
+  if (v.indexOf("alt") >= 0) return '<span class="an-pill alta">Alta</span>';
+  if (v.indexOf("med") >= 0 || v.indexOf("méd") >= 0) return '<span class="an-pill media">Média</span>';
+  return '<span class="an-pill baixa">Baixa</span>';
+}
+function renderRiskReport(d) {
+  if (!d || typeof d !== "object") { $("#anResult").innerHTML = '<div class="an-disclaimer">Resposta da IA em formato inesperado.</div>'; return; }
+  const score = Number(d.score);
+  const nivel = d.nivel || (score >= 67 ? "Alto" : score >= 34 ? "Médio" : "Baixo");
+  const nc = nivelClass(nivel);
+  const arr = (x) => Array.isArray(x) ? x : [];
+  const li = (cls, ico, html, pill) => '<div class="an-li ' + cls + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + ico + '</svg><div style="flex:1;">' + html + '</div>' + (pill || "") + '</div>';
+  const ICH = '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>';
+  const IWARN = '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>';
+  const ICAL = '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>';
+  const IDOC = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>';
+
+  let html = '<div class="an-block" style="margin-top:22px;">' +
+    '<div class="risk-head"><div class="risk-gauge ' + nc + '" style="background:conic-gradient(currentColor ' + (isNaN(score) ? 50 : score) + '%, var(--surface-2) 0);"><span style="background:var(--bg-2);width:62px;height:62px;border-radius:50%;display:grid;place-items:center;">' + (isNaN(score) ? "?" : score) + '</span></div>' +
+      '<div class="rh-txt"><h4 class="' + nc + '">Risco ' + esc(nivel) + '</h4><p>' + esc(d.resumo || "Análise concluída.") + '</p></div></div></div>';
+
+  if (arr(d.riscos).length) {
+    html += '<div class="an-block"><div class="anb-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">' + IWARN + '</svg>Pontos de atenção / risco</div><div class="an-list">' +
+      arr(d.riscos).map((r) => li("risk", IWARN, '<b>' + esc(r.ponto || r.titulo || "Risco") + '</b>' + (r.recomendacao ? '<br><span style="color:var(--text-dim);">' + esc(r.recomendacao) + '</span>' : ''), sevPill(r.severidade))).join("") + '</div></div>';
+  }
+  if (arr(d.habilitacao).length) {
+    html += '<div class="an-block"><div class="anb-title">Exigências de habilitação</div><div class="an-list">' +
+      arr(d.habilitacao).map((h) => li("info", ICH, '<b>' + esc(h.item || h.tipo || "Exigência") + '</b>' + (h.exigencia ? '<br><span style="color:var(--text-dim);">' + esc(h.exigencia) + '</span>' : ''), h.criticidade ? sevPill(h.criticidade) : "")).join("") + '</div></div>';
+  }
+  if (arr(d.prazos).length) {
+    html += '<div class="an-block"><div class="anb-title">Prazos críticos</div><div class="an-list">' +
+      arr(d.prazos).map((p) => li("info", ICAL, '<b>' + esc(p.label || p.evento || "Prazo") + '</b>' + (p.data ? ' — ' + esc(p.data) : '') + (p.obs ? '<br><span style="color:var(--text-dim);">' + esc(p.obs) + '</span>' : ''))).join("") + '</div></div>';
+  }
+  if (d.garantias) {
+    html += '<div class="an-block"><div class="anb-title">Garantias</div><div class="an-list">' + li("info", ICH, esc(typeof d.garantias === "string" ? d.garantias : JSON.stringify(d.garantias))) + '</div></div>';
+  }
+  if (d.julgamento) {
+    html += '<div class="an-block"><div class="anb-title">Critério de julgamento</div><div class="an-list">' + li("info", ICH, esc(d.julgamento)) + '</div></div>';
+  }
+  if (arr(d.documentos).length) {
+    html += '<div class="an-block"><div class="anb-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">' + IDOC + '</svg>Checklist de documentos para participar</div><div class="an-list">' +
+      arr(d.documentos).map((doc) => li("ok", ICH, esc(typeof doc === "string" ? doc : (doc.nome || doc.documento || "")))).join("") + '</div></div>';
+  }
+  if (d.recomendacaoFinal || d.recomendacao_final) {
+    html += '<div class="an-block"><div class="anb-title">Recomendação</div><div class="an-li info"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg><div>' + esc(d.recomendacaoFinal || d.recomendacao_final) + '</div></div></div>';
+  }
+  html += '<div class="an-disclaimer">⚠️ Análise gerada por IA a partir dos PDFs enviados, como apoio à decisão. Confira sempre o edital oficial e os prazos no PNCP antes de participar.</div>';
+  $("#anResult").innerHTML = html;
+  $("#anResult").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function closeAnalise() {
+  $("#analiseOverlay").classList.remove("open");
+  if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
+}
+
 /* ============================== 7. CONTROLLER ============================== */
 function init() {
   populateModalidades();
   populateStatus();
   loadAlerts();
+  loadFavs();
   loadHero();
   refreshAlerts();
+  updateFavBadge();
 
   $("#ufSel").addEventListener("change", onUFChange);
   // combobox município
@@ -1831,8 +2188,13 @@ function init() {
   $("#alertsOverlay").addEventListener("click", closeAlerts);
   $("#refreshAlerts").addEventListener("click", () => { toast("Verificando alertas no PNCP…"); refreshAlerts(); });
 
+  $("#favsBtn").addEventListener("click", openFavs);
+  $("#closeFavs").addEventListener("click", closeFavs);
+  $("#favsOverlay").addEventListener("click", closeFavs);
+  $("#analiseOverlay").addEventListener("click", (e) => { if (e.target.id === "analiseOverlay") closeAnalise(); });
+
   $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); closeAlerts(); hideMunPop(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); hideMunPop(); } });
 
   if (state.proxyBase) updateSrcPill("warn");
 }
