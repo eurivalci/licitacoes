@@ -255,6 +255,32 @@
   .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
   .btn-primary:disabled { opacity: 0.55; cursor: progress; transform: none; }
 
+  /* keyword search hero */
+  .search-hero {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: 14px;
+    padding: 7px 7px 7px 16px; transition: 0.16s;
+  }
+  .search-hero:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .search-hero .sh-ico { color: var(--muted); flex-shrink: 0; }
+  .search-hero .sh-input {
+    flex: 1; background: none; border: none; color: var(--text); font-size: 1rem; padding: 10px 0; outline: none;
+  }
+  .search-hero .sh-input::placeholder { color: var(--muted); }
+  .search-hero .sh-btn { grid-column: unset; padding: 12px 22px; }
+  .sh-input::-webkit-search-cancel-button { filter: invert(0.6); cursor: pointer; }
+
+  .kw-suggest { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; font-size: 0.8rem; color: var(--muted); }
+  .kw-tag {
+    font-size: 0.78rem; color: var(--text-dim); padding: 5px 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); transition: 0.14s;
+  }
+  .kw-tag:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .field label .opt { font-size: 0.68rem; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .filters-hint { font-size: 0.8rem; color: var(--muted); margin-top: 14px; line-height: 1.5; }
+  .badge.b-mode { background: rgba(167,139,250,0.14); color: var(--violet); border-color: rgba(167,139,250,0.3); }
+
   /* ============================================================
      RESULTS
      ============================================================ */
@@ -389,6 +415,18 @@
   .items-table td { padding: 11px 13px; border-top: 1px solid var(--border); color: var(--text-dim); }
   .items-table td.num { font-family: var(--font-mono); color: var(--text); text-align: right; white-space: nowrap; }
   .items-mini-load { padding: 20px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+  .arq-list { display: flex; flex-direction: column; gap: 8px; }
+  .arq-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface); transition: 0.16s; text-decoration: none; color: var(--text);
+  }
+  .arq-item:hover { background: var(--surface-hover); border-color: var(--accent); }
+  .arq-item > svg:first-child { color: var(--accent-2); flex-shrink: 0; }
+  .arq-item .arq-name { flex: 1; font-size: 0.88rem; }
+  .arq-item .arq-name i { color: var(--muted); font-style: normal; font-size: 0.78rem; }
+  .arq-item .arq-dl { color: var(--muted); flex-shrink: 0; }
+  .arq-item:hover .arq-dl { color: var(--accent); }
 
   .modal-foot { display: flex; gap: 12px; flex-wrap: wrap; padding: 20px 26px; border-top: 1px solid var(--border); background: var(--surface); }
   .btn-link {
@@ -529,17 +567,40 @@
     <div class="panel-head">
       <span class="ph-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <h3>Pesquisar contratações</h3>
-      <span>Selecione UF → município → busque</span>
+      <span>Por palavra-chave (objeto) e/ou por município</span>
+    </div>
+
+    <!-- keyword search bar (destaque) -->
+    <div class="search-hero">
+      <svg class="sh-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input class="sh-input" id="kwInput" type="search" placeholder="Busque pelo objeto: ex. merenda escolar, FEBRABAN, ambulância, software…" autocomplete="off" />
+      <button class="btn-primary sh-btn" id="searchBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Buscar
+      </button>
+    </div>
+    <div class="kw-suggest" id="kwSuggest">
+      <span>Sugestões:</span>
+      <button class="kw-tag" data-kw="merenda escolar">merenda escolar</button>
+      <button class="kw-tag" data-kw="transporte escolar">transporte escolar</button>
+      <button class="kw-tag" data-kw="medicamentos">medicamentos</button>
+      <button class="kw-tag" data-kw="pavimentação">pavimentação</button>
+      <button class="kw-tag" data-kw="software">software</button>
+      <button class="kw-tag" data-kw="ambulância">ambulância</button>
     </div>
 
     <div class="filters">
       <div class="field c3">
-        <label for="ufSel">Estado (UF)</label>
+        <label for="ufSel">Estado (UF) <span class="opt">opcional</span></label>
         <select class="ctrl" id="ufSel"><option value="">Carregando…</option></select>
       </div>
       <div class="field c3">
-        <label for="munSel">Município</label>
+        <label for="munSel">Município <span class="opt">opcional</span></label>
         <select class="ctrl" id="munSel" disabled><option value="">Selecione a UF primeiro</option></select>
+      </div>
+      <div class="field c2">
+        <label for="statusSel">Status</label>
+        <select class="ctrl" id="statusSel"></select>
       </div>
       <div class="field c2">
         <label for="modSel">Modalidade</label>
@@ -548,17 +609,14 @@
       <div class="field c2">
         <label for="periodSel">Período</label>
         <select class="ctrl" id="periodSel">
-          <option value="30">Últimos 30 dias</option>
-          <option value="90" selected>Últimos 90 dias</option>
-          <option value="180">Últimos 180 dias</option>
-          <option value="365">Último ano</option>
+          <option value="30">30 dias</option>
+          <option value="90" selected>90 dias</option>
+          <option value="180">180 dias</option>
+          <option value="365">1 ano</option>
         </select>
       </div>
-      <button class="btn-primary" id="searchBtn" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        Buscar
-      </button>
     </div>
+    <p class="filters-hint" id="filtersHint">Dica: digite uma palavra-chave para buscar em todo o país, ou escolha um município para listar tudo dele. Os filtros de modalidade/período valem para a busca por município.</p>
   </section>
 
   <!-- ===================== RESULTS ===================== -->
@@ -648,11 +706,20 @@ const CFG = {
   HTTP_TIMEOUT: 18000,
   PAGE_SIZE: 20,
   CACHE_TTL: 1000 * 60 * 10,                      // 10 min
+  SEARCH_PAGE: 12,
   PUBLIC_PROXIES: [
     (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
     (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)
   ]
 };
+
+// Status da busca por palavra-chave (API /search do PNCP).
+const STATUS_BUSCA = [
+  { v: "", nome: "Todos os status" },
+  { v: "recebendo_proposta", nome: "Recebendo proposta" },
+  { v: "julgamento", nome: "Em julgamento / encerradas" },
+  { v: "encerradas", nome: "Encerradas" }
+];
 
 // Modalidades de contratação (domínio PNCP). 0 = "principais" (itera).
 const MODALIDADES = [
@@ -687,6 +754,9 @@ const state = {
   munId: "", munNome: "",
   modalidade: 0,
   periodo: 90,
+  keyword: "",
+  status: "",
+  searchMode: false,
   pagina: 1,
   totalRegistros: 0,
   totalPaginas: 1,
@@ -892,15 +962,85 @@ const pncpService = {
     const { data } = await pncpFetch("/consulta/v1/contratacoes/proposta?" + qs.toString());
     return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
   },
+  // Busca por palavra-chave (API /search do portal). Indexa o objeto.
+  async searchEditais({ q, uf, status, pagina = 1 }) {
+    const qs = new URLSearchParams();
+    qs.set("q", q || "");
+    qs.set("tipos_documento", "edital");
+    qs.set("ordenacao", "-data");
+    qs.set("pagina", String(pagina));
+    qs.set("tam_pagina", String(CFG.SEARCH_PAGE));
+    if (uf) qs.set("ufs", uf);
+    if (status) qs.set("status", status);
+    const { data } = await pncpFetch("/search/?" + qs.toString());
+    const items = (data && (data.items || data.data || data.results)) || [];
+    const total = (data && (data.total != null ? data.total : data.totalRegistros)) || items.length;
+    return { items: items.map(normalizeSearchItem), total };
+  },
+  // Detalhe completo de uma contratação (fonte autoritativa do modal).
+  async compraDetalhe(cnpj, ano, sequencial) {
+    const { data } = await pncpFetch("/pncp/v1/orgaos/" + cnpj + "/compras/" + ano + "/" + sequencial);
+    return data || null;
+  },
+  // Arquivos/editais para download.
+  async arquivos(cnpj, ano, sequencial) {
+    try {
+      const { data } = await pncpFetch("/pncp/v1/orgaos/" + cnpj + "/compras/" + ano + "/" + sequencial + "/arquivos");
+      return Array.isArray(data) ? data : (data && data.data ? data.data : []);
+    } catch (e) { return []; }
+  },
   // Itens da contratação (API pncp/v1). numeroControlePNCP -> cnpj/ano/sequencial.
   async itens(numeroControlePNCP) {
-    const m = /^(\d{14})-\d+-(\d+)\/(\d{4})$/.exec(numeroControlePNCP || "");
-    if (!m) return null;
-    const cnpj = m[1], seq = parseInt(m[2], 10), ano = m[3];
-    const { data } = await pncpFetch("/pncp/v1/orgaos/" + cnpj + "/compras/" + ano + "/" + seq + "/itens?pagina=1&tamanhoPagina=50");
+    const ref = parseControle(numeroControlePNCP);
+    if (!ref) return null;
+    const { data } = await pncpFetch("/pncp/v1/orgaos/" + ref.cnpj + "/compras/" + ref.ano + "/" + ref.seq + "/itens?pagina=1&tamanhoPagina=50");
     return Array.isArray(data) ? data : (data && data.data ? data.data : null);
   }
 };
+
+// Extrai cnpj/ano/sequencial do número de controle PNCP.
+function parseControle(num) {
+  const m = /^(\d{14})-\d+-(\d+)\/(\d{4})$/.exec(num || "");
+  if (!m) return null;
+  return { cnpj: m[1], seq: parseInt(m[2], 10), ano: m[3] };
+}
+
+// Normaliza item da API /search para o mesmo formato interno usado pelos cards.
+// A /search usa nomes de campo diferentes da /consulta; mapeia com fallbacks.
+function normalizeSearchItem(it) {
+  const cnpj = it.orgao_cnpj || it.orgao_cnpj_raiz || "";
+  const ano = it.ano || it.ano_compra || "";
+  const seq = it.numero_sequencial || it.sequencial || "";
+  let numeroControle = it.numero_controle_pncp || it.numeroControlePNCP || null;
+  if (!numeroControle && cnpj && ano && seq) {
+    numeroControle = cnpj + "-1-" + String(seq).padStart(6, "0") + "/" + ano;
+  }
+  return {
+    _fromSearch: true,
+    numeroControlePNCP: numeroControle,
+    _cnpj: cnpj, _ano: ano, _seq: seq,
+    objetoCompra: it.description || it.objeto || it.title || "Objeto não informado",
+    processo: it.numero || it.processo || "",
+    modalidadeId: it.modalidade_licitacao_id || null,
+    modalidadeNome: it.modalidade_licitacao_nome || it.tipo_nome || "Edital",
+    modoDisputaNome: it.modo_disputa_nome || "",
+    situacaoCompraId: null,
+    situacaoCompraNome: it.situacao_nome || it.situacao || "",
+    valorTotalEstimado: it.valor_global != null ? it.valor_global : (it.valor != null ? it.valor : null),
+    valorTotalHomologado: it.valor_homologado != null ? it.valor_homologado : null,
+    dataPublicacaoPncp: it.data_publicacao_pncp || it.createdAt || it.data || null,
+    dataAberturaProposta: it.data_inicio_vigencia || it.data_abertura_proposta || null,
+    dataEncerramentoProposta: it.data_fim_vigencia || it.data_encerramento_proposta || null,
+    orgaoEntidade: { razaoSocial: it.orgao_nome || it.orgao_subrogado_nome || "", cnpj: cnpj },
+    unidadeOrgao: {
+      nomeUnidade: it.unidade_nome || "",
+      municipioNome: it.municipio_nome || "",
+      ufSigla: it.uf || "",
+      codigoIbge: it.municipio_id || ""
+    },
+    linkSistemaOrigem: it.item_url ? ("https://pncp.gov.br" + it.item_url) : null
+  };
+}
 
 /* ============================== 6. RENDER ============================== */
 
@@ -987,14 +1127,25 @@ function populateUF(estados) {
 function populateModalidades() {
   $("#modSel").innerHTML = MODALIDADES.map((m) => '<option value="' + m.id + '"' + (m.id === 0 ? " selected" : "") + '>' + esc(m.nome) + '</option>').join("");
 }
+function populateStatus() {
+  $("#statusSel").innerHTML = STATUS_BUSCA.map((s) => '<option value="' + s.v + '">' + esc(s.nome) + '</option>').join("");
+}
+function updateSearchBtn() {
+  const kw = $("#kwInput").value.trim();
+  $("#searchBtn").disabled = !(kw || state.munId);
+  // modalidade/período só fazem sentido no modo município
+  const muniMode = !kw;
+  $("#modSel").disabled = !muniMode;
+  $("#periodSel").disabled = !muniMode;
+}
 async function onUFChange() {
   const sel = $("#ufSel");
   state.uf = sel.value;
   state.ufNome = sel.options[sel.selectedIndex] ? (sel.options[sel.selectedIndex].dataset.nome || "") : "";
   const munSel = $("#munSel");
-  $("#searchBtn").disabled = true;
   if (!state.uf) {
     munSel.disabled = true; munSel.innerHTML = '<option value="">Selecione a UF primeiro</option>';
+    state.munId = ""; state.munNome = ""; updateSearchBtn();
     return;
   }
   munSel.disabled = true; munSel.innerHTML = '<option value="">Carregando municípios…</option>';
@@ -1007,60 +1158,88 @@ async function onUFChange() {
     munSel.innerHTML = '<option value="">Erro ao carregar</option>';
     toast("Falha ao carregar municípios.");
   }
+  updateSearchBtn();
 }
 function onMunChange() {
   const sel = $("#munSel");
   state.munId = sel.value;
   state.munNome = sel.options[sel.selectedIndex] ? (sel.options[sel.selectedIndex].dataset.nome || "") : "";
-  $("#searchBtn").disabled = !state.munId;
+  updateSearchBtn();
 }
 
 // ---- Busca / lista ----
 async function runSearch(reset = true) {
   if (state.loading) return;
-  if (!state.munId) { toast("Selecione um município."); return; }
+  const kw = $("#kwInput").value.trim();
+  state.keyword = kw;
+  state.searchMode = !!kw;
+  state.status = $("#statusSel").value;
+
+  if (!kw && !state.munId) { toast("Digite uma palavra-chave ou selecione um município."); return; }
+
   state.loading = true;
   if (reset) { state.pagina = 1; state.items = []; }
   state.modalidade = parseInt($("#modSel").value, 10);
   state.periodo = parseInt($("#periodSel").value, 10);
   $("#searchBtn").disabled = true;
-
   if (reset) renderLoadingState();
 
-  const di = ymd(daysAgo(state.periodo)), df = ymd(daysAgo(0));
-  const mods = state.modalidade === 0 ? MOD_PRINCIPAIS : [state.modalidade];
-
   try {
-    let collected = [], total = 0, maxPaginas = 1;
-    for (const mod of mods) {
-      const r = await pncpService.contratacoesPublicacao({
-        uf: state.uf, municipioIbge: state.munId, modalidade: mod,
-        dataInicial: di, dataFinal: df, pagina: state.pagina
-      });
-      collected = collected.concat(r.data || []);
-      total += r.totalRegistros || 0;
-      maxPaginas = Math.max(maxPaginas, r.totalPaginas || 1);
-    }
-    // dedup por numeroControlePNCP, ordena por data de publicação desc
-    const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
-    collected.forEach((c) => { if (!seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
-    state.items.sort((a, b) => new Date(b.dataPublicacaoPncp || 0) - new Date(a.dataPublicacaoPncp || 0));
-    state.totalRegistros = total;
-    state.totalPaginas = maxPaginas;
+    if (state.searchMode) await searchByKeyword(reset);
+    else await searchByMunicipio(reset);
     renderResults();
   } catch (e) {
     renderErrorState(e);
   } finally {
     state.loading = false;
-    $("#searchBtn").disabled = false;
+    updateSearchBtn();
   }
 }
 
+async function searchByKeyword(reset) {
+  const r = await pncpService.searchEditais({
+    q: state.keyword, uf: state.uf, status: state.status, pagina: state.pagina
+  });
+  let novos = r.items;
+  // refino client-side por município (a /search filtra por UF; município por nome)
+  if (state.munNome) {
+    const alvo = state.munNome.toLowerCase();
+    novos = novos.filter((c) => (c.unidadeOrgao.municipioNome || "").toLowerCase() === alvo);
+  }
+  const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
+  novos.forEach((c) => { if (c.numeroControlePNCP && !seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
+  state.totalRegistros = r.total;
+  state.totalPaginas = Math.max(1, Math.ceil(r.total / CFG.SEARCH_PAGE));
+}
+
+async function searchByMunicipio(reset) {
+  const di = ymd(daysAgo(state.periodo)), df = ymd(daysAgo(0));
+  const mods = state.modalidade === 0 ? MOD_PRINCIPAIS : [state.modalidade];
+  let total = 0, maxPaginas = 1, collected = [];
+  for (const mod of mods) {
+    const r = await pncpService.contratacoesPublicacao({
+      uf: state.uf, municipioIbge: state.munId, modalidade: mod,
+      dataInicial: di, dataFinal: df, pagina: state.pagina
+    });
+    collected = collected.concat(r.data || []);
+    total += r.totalRegistros || 0;
+    maxPaginas = Math.max(maxPaginas, r.totalPaginas || 1);
+  }
+  const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
+  collected.forEach((c) => { if (!seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
+  state.items.sort((a, b) => new Date(b.dataPublicacaoPncp || 0) - new Date(a.dataPublicacaoPncp || 0));
+  state.totalRegistros = total;
+  state.totalPaginas = maxPaginas;
+}
+
 function renderLoadingState() {
+  const ctx = state.searchMode
+    ? 'objeto contendo <b>"' + esc(state.keyword) + '"</b>' + (state.uf ? ' em <b>' + esc(state.uf) + '</b>' : ' no Brasil')
+    : 'contratações de <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b>';
   $("#results").innerHTML =
     '<div class="state-box"><div class="spinner"></div>' +
     '<h4 style="margin-top:20px;">Consultando o PNCP…</h4>' +
-    '<p>Buscando contratações de <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b>.</p></div>';
+    '<p>Buscando ' + ctx + '.</p></div>';
 }
 
 function renderErrorState(e) {
@@ -1081,23 +1260,31 @@ function renderErrorState(e) {
 function renderResults() {
   const root = $("#results");
   if (!state.items.length) {
+    const msg = state.searchMode
+      ? 'Nenhum edital com objeto contendo <b>"' + esc(state.keyword) + '"</b>' + (state.uf ? ' em <b>' + esc(state.uf) + '</b>' : '') + '. Tente termos mais amplos ou remova o filtro de UF/status.'
+      : 'Não há registros para <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b> no período e modalidade selecionados. Tente ampliar o período ou a modalidade “Principais”.';
     root.innerHTML =
       '<div class="state-box"><div class="sb-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>' +
-      '<h4>Nenhuma contratação encontrada</h4>' +
-      '<p>Não há registros para <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b> no período e modalidade selecionados. Tente ampliar o período ou trocar a modalidade para “Principais”.</p></div>';
+      '<h4>Nenhum resultado encontrado</h4><p>' + msg + '</p></div>';
     return;
   }
 
   const somaEst = state.items.reduce((s, c) => s + (Number(c.valorTotalEstimado) || 0), 0);
   const somaHom = state.items.reduce((s, c) => s + (Number(c.valorTotalHomologado) || 0), 0);
+  const titulo = state.searchMode
+    ? '“' + esc(state.keyword) + '”'
+    : esc(state.munNome) + ' <small>/ ' + esc(state.uf) + '</small>';
+  const escopo = state.searchMode
+    ? (state.uf ? esc(state.uf) : 'Brasil') + (state.munNome ? ' · ' + esc(state.munNome) : '')
+    : esc(state.uf);
 
   root.innerHTML =
     '<div class="results-bar">' +
-      '<h3>' + esc(state.munNome) + ' <small>/ ' + esc(state.uf) + ' · ' + state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '') + '</small></h3>' +
+      '<h3>' + titulo + ' <small>· ' + state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '') + '</small></h3>' +
       '<div class="summary-chips">' +
-        '<span class="chip">Estimado: <b>' + fmtBRLCompact(somaEst) + '</b></span>' +
-        '<span class="chip">Homologado: <b>' + fmtBRLCompact(somaHom) + '</b></span>' +
-        '<span class="chip">Período: <b>' + state.periodo + 'd</b></span>' +
+        '<span class="chip">' + (state.searchMode ? 'Escopo: <b>' + escopo + '</b>' : 'Estimado: <b>' + fmtBRLCompact(somaEst) + '</b>') + '</span>' +
+        (state.searchMode ? '' : '<span class="chip">Homologado: <b>' + fmtBRLCompact(somaHom) + '</b></span>') +
+        '<span class="chip">' + (state.searchMode ? 'Busca por <b>objeto</b>' : 'Período: <b>' + state.periodo + 'd</b>') + '</span>' +
       '</div>' +
     '</div>' +
     '<div class="card-grid" id="cardGrid"></div>' +
@@ -1207,11 +1394,40 @@ function buildTimeline(c) {
 }
 
 // ---- Modal ----
-function openModal(c) {
+function getRef(c) {
+  const p = parseControle(c.numeroControlePNCP);
+  if (p) return p;
+  if (c._cnpj && c._ano && c._seq) return { cnpj: c._cnpj, ano: c._ano, seq: parseInt(c._seq, 10) };
+  return null;
+}
+
+async function openModal(c) {
+  $("#modal").innerHTML =
+    '<div class="modal-head"><button class="modal-close" id="modalCloseBtn" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+    '<div class="mh-badges"><span class="badge b-mod">' + esc(c.modalidadeNome || "Edital") + '</span></div>' +
+    '<h3 id="modalTitle">' + esc(c.objetoCompra || "Contratação pública") + '</h3></div>' +
+    '<div class="modal-body" id="modalBody"><div class="items-mini-load"><div class="spinner" style="width:30px;height:30px;"></div><div style="margin-top:12px;">Carregando detalhes completos…</div></div></div>';
+  $("#modalOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#modalCloseBtn").onclick = closeModal;
+
+  const ref = getRef(c);
+  let full = c;
+  // enriquece com o detalhe autoritativo (essencial para itens vindos da busca)
+  if (ref && (c._fromSearch || !c.amparoLegal)) {
+    try {
+      const det = await pncpService.compraDetalhe(ref.cnpj, ref.ano, ref.seq);
+      if (det) full = Object.assign({}, c, det);
+    } catch (e) { /* mantém o que temos */ }
+  }
+  renderModalBody(full, ref);
+}
+
+function renderModalBody(c, ref) {
   const unidade = c.unidadeOrgao || {};
   const orgao = c.orgaoEntidade || {};
   const tag = statusTag(c);
-  const pncpUrl = buildPncpUrl(c.numeroControlePNCP);
+  const pncpUrl = buildPncpUrl(c.numeroControlePNCP) || (ref ? "https://pncp.gov.br/app/editais/" + ref.cnpj + "/" + ref.ano + "/" + ref.seq : null);
 
   const detailItems = [
     { k: "Nº de controle PNCP", v: c.numeroControlePNCP || "—", mono: true },
@@ -1220,6 +1436,7 @@ function openModal(c) {
     { k: "Modo de disputa", v: c.modoDisputaNome || "—" },
     { k: "Situação", v: c.situacaoCompraNome || tag.nome },
     { k: "Registro de preços", v: c.srp ? "Sim (SRP)" : "Não" },
+    { k: "Esfera / Poder", v: [orgao.esferaId, orgao.poderId].filter(Boolean).join(" · ") || (c.unidadeOrgao && c.unidadeOrgao.ufNome) || "—" },
     { k: "Abertura das propostas", v: fmtDate(c.dataAberturaProposta) },
     { k: "Encerramento das propostas", v: fmtDate(c.dataEncerramentoProposta) },
     { k: "Amparo legal", v: c.amparoLegal ? (c.amparoLegal.nome || c.amparoLegal.descricao || "—") : "—", full: true }
@@ -1229,69 +1446,88 @@ function openModal(c) {
   const valEst = Number(c.valorTotalEstimado) || 0;
   const valHom = Number(c.valorTotalHomologado) || 0;
 
-  const modal = $("#modal");
-  modal.innerHTML =
-    '<div class="modal-head">' +
-      '<button class="modal-close" id="modalCloseBtn" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
-      '<div class="mh-badges">' +
-        '<span class="badge b-mod">' + esc(c.modalidadeNome || "Modalidade " + c.modalidadeId) + '</span>' +
-        '<span class="st-tag ' + tag.cls + '" style="padding:4px 0;"><span class="st-dot"></span>' + esc(tag.nome) + '</span>' +
-      '</div>' +
-      '<h3 id="modalTitle">' + esc(c.objetoCompra || "Contratação pública") + '</h3>' +
-      '<div class="mh-org"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>' +
-        esc(orgao.razaoSocial || unidade.nomeUnidade || "Órgão não informado") + ' · ' + esc(unidade.municipioNome || state.munNome) + '/' + esc(unidade.ufSigla || state.uf) + '</div>' +
+  const head = $("#modal .modal-head");
+  head.innerHTML =
+    '<button class="modal-close" id="modalCloseBtn" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+    '<div class="mh-badges">' +
+      '<span class="badge b-mod">' + esc(c.modalidadeNome || "Edital") + '</span>' +
+      '<span class="st-tag ' + tag.cls + '" style="padding:4px 0;"><span class="st-dot"></span>' + esc(tag.nome) + '</span>' +
     '</div>' +
-    '<div class="modal-body">' +
-      '<div class="section-title">Evolução do status</div>' +
-      buildTimeline(c) +
-      '<div class="section-title">Valores</div>' +
-      '<div class="detail-grid">' +
-        '<div class="detail-item gold"><div class="di-k">Valor total estimado</div><div class="di-v">' + fmtBRL(valEst) + '</div></div>' +
-        '<div class="detail-item ' + (valHom > 0 ? "green" : "") + '"><div class="di-k">Valor total homologado</div><div class="di-v">' + (valHom > 0 ? fmtBRL(valHom) : "—") + '</div></div>' +
-      '</div>' +
-      '<div class="section-title">Dados da contratação</div>' +
-      '<div class="detail-grid">' +
-        detailItems.map((d) =>
-          '<div class="detail-item' + (d.full ? " full" : "") + '"><div class="di-k">' + esc(d.k) + '</div><div class="di-v' + (d.mono ? " mono" : "") + '">' + esc(d.v) + '</div></div>'
-        ).join("") +
-      '</div>' +
-      '<div class="section-title">Itens da contratação</div>' +
-      '<div class="items-wrap" id="itemsWrap"><div class="items-mini-load"><div class="spinner" style="width:26px;height:26px;"></div><div style="margin-top:10px;">Carregando itens…</div></div></div>' +
-    '</div>' +
-    '<div class="modal-foot">' +
-      (pncpUrl ? '<a class="btn-link primary" href="' + esc(pncpUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>Abrir no PNCP</a>' : '') +
-      (c.linkSistemaOrigem ? '<a class="btn-link" href="' + esc(c.linkSistemaOrigem) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Sistema de origem</a>' : '') +
-      '<button class="btn-link" id="modalCloseFoot">Fechar</button>' +
-    '</div>';
+    '<h3 id="modalTitle">' + esc(c.objetoCompra || "Contratação pública") + '</h3>' +
+    '<div class="mh-org"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>' +
+      esc(orgao.razaoSocial || unidade.nomeUnidade || "Órgão não informado") + ' · ' + esc(unidade.municipioNome || state.munNome) + '/' + esc(unidade.ufSigla || state.uf) + '</div>';
 
-  $("#modalOverlay").classList.add("open");
-  document.body.style.overflow = "hidden";
+  $("#modalBody").innerHTML =
+    '<div class="section-title">Evolução do status</div>' + buildTimeline(c) +
+    '<div class="section-title">Valores</div>' +
+    '<div class="detail-grid">' +
+      '<div class="detail-item gold"><div class="di-k">Valor total estimado</div><div class="di-v">' + fmtBRL(valEst) + '</div></div>' +
+      '<div class="detail-item ' + (valHom > 0 ? "green" : "") + '"><div class="di-k">Valor total homologado</div><div class="di-v">' + (valHom > 0 ? fmtBRL(valHom) : "—") + '</div></div>' +
+    '</div>' +
+    '<div class="section-title">Dados da contratação</div>' +
+    '<div class="detail-grid">' +
+      detailItems.map((d) => '<div class="detail-item' + (d.full ? " full" : "") + '"><div class="di-k">' + esc(d.k) + '</div><div class="di-v' + (d.mono ? " mono" : "") + '">' + esc(d.v) + '</div></div>').join("") +
+    '</div>' +
+    '<div class="section-title">Itens da contratação</div>' +
+    '<div class="items-wrap" id="itemsWrap"><div class="items-mini-load"><div class="spinner" style="width:26px;height:26px;"></div><div style="margin-top:10px;">Carregando itens…</div></div></div>' +
+    '<div class="section-title">Documentos &amp; editais</div>' +
+    '<div id="arqWrap"><div class="items-mini-load">Carregando documentos…</div></div>';
+
+  // foot
+  const oldFoot = $("#modal .modal-foot");
+  if (oldFoot) oldFoot.remove();
+  const foot = el("div", { class: "modal-foot" });
+  foot.innerHTML =
+    (pncpUrl ? '<a class="btn-link primary" href="' + esc(pncpUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>Abrir no PNCP</a>' : '') +
+    (c.linkSistemaOrigem ? '<a class="btn-link" href="' + esc(c.linkSistemaOrigem) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Sistema de origem</a>' : '') +
+    '<button class="btn-link" id="modalCloseFoot">Fechar</button>';
+  $("#modal").appendChild(foot);
+
   $("#modalCloseBtn").onclick = closeModal;
   $("#modalCloseFoot").onclick = closeModal;
 
-  loadModalItems(c);
+  loadModalItems(ref);
+  loadModalArquivos(ref);
 }
 
-async function loadModalItems(c) {
+async function loadModalItems(ref) {
   const wrap = $("#itemsWrap");
+  if (!wrap) return;
+  if (!ref) { wrap.innerHTML = '<div class="items-mini-load">Itens não disponíveis para este registro.</div>'; return; }
   try {
-    const itens = await pncpService.itens(c.numeroControlePNCP);
-    if (!itens || !itens.length) {
-      wrap.innerHTML = '<div class="items-mini-load">Sem itens detalhados disponíveis para esta contratação.</div>';
-      return;
-    }
+    const itens = await pncpService.itens(ref.cnpj + "-1-" + String(ref.seq).padStart(6, "0") + "/" + ref.ano);
+    if (!itens || !itens.length) { wrap.innerHTML = '<div class="items-mini-load">Sem itens detalhados disponíveis.</div>'; return; }
     const rows = itens.slice(0, 50).map((it, i) =>
       '<tr><td class="num">' + (it.numeroItem || (i + 1)) + '</td>' +
       '<td>' + esc(it.descricao || it.materialOuServicoNome || "—") + '</td>' +
       '<td class="num">' + fmtInt(it.quantidade) + (it.unidadeMedida ? " " + esc(it.unidadeMedida) : "") + '</td>' +
       '<td class="num">' + fmtBRL(it.valorUnitarioEstimado) + '</td>' +
-      '<td class="num">' + fmtBRL(it.valorTotal || (it.valorUnitarioEstimado * it.quantidade)) + '</td></tr>'
+      '<td class="num">' + fmtBRL(it.valorTotal != null ? it.valorTotal : (Number(it.valorUnitarioEstimado) * Number(it.quantidade))) + '</td></tr>'
     ).join("");
     wrap.innerHTML =
-      '<table class="items-table"><thead><tr><th>#</th><th>Descrição</th><th style="text-align:right;">Qtd.</th><th style="text-align:right;">Vlr. unit.</th><th style="text-align:right;">Total</th></tr></thead><tbody>' +
-      rows + '</tbody></table>';
+      '<table class="items-table"><thead><tr><th>#</th><th>Descrição</th><th style="text-align:right;">Qtd.</th><th style="text-align:right;">Vlr. unit.</th><th style="text-align:right;">Total</th></tr></thead><tbody>' + rows + '</tbody></table>';
   } catch (e) {
-    wrap.innerHTML = '<div class="items-mini-load">Itens indisponíveis no momento (a consulta de itens usa outra rota do PNCP que também depende do proxy).</div>';
+    wrap.innerHTML = '<div class="items-mini-load">Itens indisponíveis no momento.</div>';
+  }
+}
+
+async function loadModalArquivos(ref) {
+  const wrap = $("#arqWrap");
+  if (!wrap) return;
+  if (!ref) { wrap.innerHTML = '<div class="items-mini-load">Sem documentos vinculados.</div>'; return; }
+  try {
+    const arqs = await pncpService.arquivos(ref.cnpj, ref.ano, ref.seq);
+    if (!arqs || !arqs.length) { wrap.innerHTML = '<div class="items-mini-load">Nenhum documento disponível para download.</div>'; return; }
+    wrap.innerHTML = '<div class="arq-list">' + arqs.slice(0, 30).map((a) => {
+      const titulo = a.titulo || a.nome || a.tipoDocumentoNome || "Documento";
+      const url = a.url || a.uri || a.link || "#";
+      return '<a class="arq-item" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' +
+        '<span class="arq-name">' + esc(titulo) + (a.dataPublicacaoPncp ? ' <i>· ' + fmtDate(a.dataPublicacaoPncp) + '</i>' : '') + '</span>' +
+        '<svg class="arq-dl" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></a>';
+    }).join("") + '</div>';
+  } catch (e) {
+    wrap.innerHTML = '<div class="items-mini-load">Documentos indisponíveis (rota /arquivos do PNCP — depende do proxy).</div>';
   }
 }
 
@@ -1338,11 +1574,18 @@ async function saveCfg() {
 /* ============================== 7. CONTROLLER ============================== */
 function init() {
   populateModalidades();
+  populateStatus();
   loadHero();
 
   $("#ufSel").addEventListener("change", onUFChange);
   $("#munSel").addEventListener("change", onMunChange);
   $("#searchBtn").addEventListener("click", () => runSearch(true));
+  $("#kwInput").addEventListener("input", updateSearchBtn);
+  $("#kwInput").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("#searchBtn").disabled) runSearch(true); });
+  $$(".kw-tag").forEach((b) => b.addEventListener("click", () => {
+    $("#kwInput").value = b.dataset.kw; updateSearchBtn(); runSearch(true);
+    $("#searchPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
   $("#cfgBtn").addEventListener("click", openDrawer);
   $("#closeDrawer").addEventListener("click", closeDrawer);
   $("#drawerOverlay").addEventListener("click", closeDrawer);

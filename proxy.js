@@ -13,7 +13,7 @@
 // vai no campo "URL base do proxy" do painel (⚙).
 
 const PNCP_ORIGIN = "https://pncp.gov.br/api";
-const ALLOWED_PREFIXES = ["/consulta/", "/pncp/"];
+const ALLOWED_PREFIXES = ["/consulta/", "/pncp/", "/search"];
 const ALLOWED_HOST = "pncp.gov.br";
 
 module.exports = async function handler(req, res) {
