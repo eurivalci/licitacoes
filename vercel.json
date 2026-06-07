@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/pncp/:path*", "destination": "/api/proxy" }
+  ]
+}

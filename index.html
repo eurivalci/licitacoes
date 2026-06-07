@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNCP — Consulta de Licitações Públicas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1351B4;--blue-d:#0C3D8A;--blue-l:#E8F0FB;--blue-xl:#F0F5FF;
+  --yellow:#FFCD07;--gov-dark:#071D41;
+  --green:#16A34A;--green-bg:#DCFCE7;--green-t:#14532D;
+  --amber-bg:#FEF3C7;--amber-t:#92400E;
+  --red-bg:#FEE2E2;--red-t:#991B1B;
+  --gray-bg:#F3F4F6;--gray-t:#374151;
+  --purple-bg:#EDE9FE;--purple-t:#5B21B6;
+  --surf:#fff;--surf2:#F7F8FA;--surf3:#EFF1F5;
+  --bdr:rgba(0,0,0,.09);--bdr2:rgba(0,0,0,.16);
+  --txt:#1A1D23;--txt2:#4B5563;--txt3:#8C93A0;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
+  --sh-sm:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sh-md:0 4px 16px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.05);
+  --sh-lg:0 10px 40px rgba(0,0,0,.14),0 4px 16px rgba(0,0,0,.08);
+}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--surf2);color:var(--txt);min-height:100vh;font-size:15px;line-height:1.6}
+
+/* ─── HEADER ─────────────────────────────── */
+.site-header{background:var(--blue);position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.gov-bar{background:var(--gov-dark);padding:4px 24px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.02em}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;max-width:1200px;margin:0 auto;gap:12px}
+.header-brand{display:flex;align-items:center;gap:13px}
+.logo-box{width:42px;height:42px;background:var(--yellow);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:var(--gov-dark);letter-spacing:.03em;line-height:1.15;text-align:center;flex-shrink:0}
+.brand-text h1{font-size:15px;font-weight:600;color:#fff;line-height:1.2}
+.brand-text p{font-size:11.5px;color:rgba(255,255,255,.6);margin-top:1px}
+.vercel-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:12px;color:rgba(255,255,255,.85);white-space:nowrap}
+.vpill-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ─── LAYOUT ─────────────────────────────── */
+.main{max-width:1200px;margin:0 auto;padding:28px 24px 64px}
+
+/* ─── DASHBOARD ──────────────────────────── */
+.dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.dash-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--blue))}
+.dash-card.accent-green{--accent:#16A34A}
+.dash-card.accent-amber{--accent:#F59E0B}
+.dash-card.accent-purple{--accent:#7C3AED}
+.dash-icon{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;background:var(--blue-l);margin-bottom:4px}
+.dash-icon svg{width:18px;height:18px;color:var(--blue)}
+.dash-card.accent-green .dash-icon{background:var(--green-bg)}.dash-card.accent-green .dash-icon svg{color:#16A34A}
+.dash-card.accent-amber .dash-icon{background:#FEF3C7}.dash-card.accent-amber .dash-icon svg{color:#D97706}
+.dash-card.accent-purple .dash-icon{background:var(--purple-bg)}.dash-card.accent-purple .dash-icon svg{color:#7C3AED}
+.dash-label{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em}
+.dash-value{font-size:26px;font-weight:600;color:var(--txt);font-family:'IBM Plex Mono',monospace;line-height:1.1}
+.dash-sub{font-size:12px;color:var(--txt3);margin-top:1px}
+.dash-bullets{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.dash-bullet{font-size:12px;color:var(--txt2);display:flex;align-items:flex-start;gap:7px;line-height:1.45}
+.dash-bullet::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent,var(--blue));flex-shrink:0;margin-top:5px}
+.dash-insight{grid-column:1/-1;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-d) 100%);border-radius:var(--r-lg);padding:20px 24px;box-shadow:var(--sh-sm)}
+.dash-insight h3{font-size:12px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.insight-item{background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:12px 14px}
+.i-label{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:3px}
+.i-val{font-size:18px;font-weight:600;color:#fff;font-family:'IBM Plex Mono',monospace}
+.i-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* ─── SEARCH PANEL ───────────────────────── */
+.search-panel{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:20px;box-shadow:var(--sh-sm)}
+.sp-title{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.search-row{display:flex;gap:10px;margin-bottom:14px}
+.search-wrap{flex:1;position:relative}
+.search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--txt3);width:18px;height:18px;pointer-events:none}
+#searchInput{width:100%;padding:10px 14px 10px 42px;border:1px solid var(--bdr2);border-radius:var(--r-md);font-size:15px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none;transition:border-color .15s,box-shadow .15s}
+#searchInput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(19,81,180,.12)}
+#searchInput::placeholder{color:var(--txt3)}
+.btn-search{padding:10px 22px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-md);font-size:15px;font-family:inherit;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}
+.btn-search:hover{background:var(--blue-d)}
+.btn-search svg{width:16px;height:16px}
+.filters-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:3px;min-width:155px}
+.filter-group label{font-size:11px;font-weight:500;color:var(--txt3);letter-spacing:.04em}
+.filter-group select{padding:7px 30px 7px 11px;border:1px solid var(--bdr2);border-radius:var(--r-sm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--txt);cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s}
+.filter-group select:focus{border-color:var(--blue)}
+.filter-group select:disabled{opacity:.45;cursor:not-allowed}
+
+/* ─── RESULTS BAR ────────────────────────── */
+.results-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.results-count{font-size:14px;color:var(--txt2)}
+.results-count strong{color:var(--txt);font-weight:600}
+
+/* ─── STATE BOXES ────────────────────────── */
+.state-box{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:48px 32px;text-align:center;color:var(--txt3)}
+.state-box svg{width:40px;height:40px;margin:0 auto 12px;opacity:.3;display:block}
+.state-box p{font-size:15px}
+.state-box small{font-size:13px;display:block;margin-top:5px;opacity:.7}
+.loading-spinner{width:28px;height:28px;border:3px solid var(--bdr2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── CARDS ──────────────────────────────── */
+.cards-list{display:flex;flex-direction:column;gap:11px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:18px 22px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s;position:relative}
+.card:hover{border-color:var(--blue);box-shadow:var(--sh-md);transform:translateY(-1px)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.card-title{font-size:14.5px;font-weight:500;color:var(--txt);line-height:1.5;flex:1}
+.badge{flex-shrink:0;font-size:11px;font-weight:500;padding:3px 11px;border-radius:20px;white-space:nowrap}
+.b-open{background:var(--green-bg);color:var(--green-t)}
+.b-judge{background:var(--amber-bg);color:var(--amber-t)}
+.b-closed{background:var(--gray-bg);color:var(--gray-t)}
+.b-purple{background:var(--purple-bg);color:var(--purple-t)}
+.b-red{background:var(--red-bg);color:var(--red-t)}
+.card-meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.mi{font-size:12.5px;color:var(--txt2);display:flex;align-items:center;gap:5px}
+.mi svg{width:13px;height:13px;flex-shrink:0;opacity:.55}
+.card-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--bdr)}
+.card-org{font-size:12.5px;color:var(--txt3);display:flex;align-items:center;gap:5px;flex:1;min-width:0}
+.card-org svg{width:12px;height:12px;flex-shrink:0}
+.card-org span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-value{font-size:13.5px;font-weight:600;color:var(--blue);font-family:'IBM Plex Mono',monospace;flex-shrink:0}
+.card-arr{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--txt3);opacity:0;transition:opacity .15s}
+.card:hover .card-arr{opacity:1}
+.card-arr svg{width:17px;height:17px}
+
+/* ─── PAGINATION ─────────────────────────── */
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:26px}
+.pg-btn{padding:7px 16px;border:1px solid var(--bdr2);border-radius:var(--r-md);background:var(--surf);color:var(--txt);font-size:14px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .12s,border-color .12s}
+.pg-btn:hover:not(:disabled){background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+.pg-btn:disabled{opacity:.35;cursor:default}
+.pg-btn svg{width:14px;height:14px}
+.pg-info{font-size:14px;color:var(--txt2);padding:0 8px}
+.pg-info strong{color:var(--txt)}
+
+/* ─── MODAL ──────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(7,29,65,.52);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surf);border-radius:var(--r-xl);width:100%;max-width:680px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh-lg);animation:mIn .18s ease-out}
+@keyframes mIn{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+
+/* status timeline */
+.modal-timeline{display:flex;align-items:flex-start;padding:20px 26px 0;flex-shrink:0;overflow-x:auto;gap:0}
+.tl-step{display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px;position:relative}
+.tl-step:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--bdr2);z-index:0}
+.tl-step.done:not(:last-child)::after{background:var(--blue)}
+.tl-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bdr2);background:var(--surf2);z-index:1;position:relative;transition:all .2s}
+.tl-icon svg{width:16px;height:16px;color:var(--txt3)}
+.tl-step.done .tl-icon{background:var(--blue-l);border-color:var(--blue)}.tl-step.done .tl-icon svg{color:var(--blue)}
+.tl-step.active .tl-icon{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 4px rgba(19,81,180,.18)}.tl-step.active .tl-icon svg{color:#fff}
+.tl-step.error .tl-icon{background:var(--red-bg);border-color:#EF4444}.tl-step.error .tl-icon svg{color:#DC2626}
+.tl-label{font-size:10px;color:var(--txt3);text-align:center;margin-top:6px;line-height:1.3;max-width:66px}
+.tl-step.done .tl-label{color:var(--blue);font-weight:500}
+.tl-step.active .tl-label{color:var(--blue);font-weight:600}
+
+.modal-header{padding:18px 26px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-shrink:0}
+.mh-left{flex:1}
+.m-eyebrow{font-size:11px;color:var(--blue);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.m-title{font-size:16.5px;font-weight:600;color:var(--txt);line-height:1.45}
+.modal-close{background:var(--surf3);border:none;cursor:pointer;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--txt2);flex-shrink:0;transition:background .12s}
+.modal-close:hover{background:var(--surf2);color:var(--txt)}
+.modal-close svg{width:18px;height:18px}
+.modal-badges{display:flex;gap:7px;flex-wrap:wrap;padding:12px 26px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.tag{font-size:12px;padding:3px 11px;background:var(--surf3);border:1px solid var(--bdr);border-radius:20px;color:var(--txt2)}
+.modal-body{overflow-y:auto;padding:20px 26px;flex:1}
+
+.isec{margin-bottom:20px}
+.isec-title{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--bdr)}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:13px 22px}
+.ii label{font-size:10.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:3px}
+.ii p{font-size:13.5px;color:var(--txt)}
+.ii.full{grid-column:1/-1}
+.obj-box{font-size:13.5px;color:var(--txt2);line-height:1.65;padding:13px;background:var(--surf2);border-radius:var(--r-md);border:1px solid var(--bdr)}
+.val-big{font-size:21px;font-weight:600;color:var(--blue);font-family:'IBM Plex Mono',monospace}
+.bullets-list{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+.bl-item{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--txt2);line-height:1.5}
+.bl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.bl-dot.blue{background:var(--blue)}.bl-dot.green{background:#16A34A}.bl-dot.amber{background:#F59E0B}.bl-dot.red{background:#EF4444}.bl-dot.purple{background:#7C3AED}
+
+.modal-footer{padding:15px 26px;border-top:1px solid var(--bdr);display:flex;gap:9px;flex-shrink:0;background:var(--surf2)}
+.btn-primary{padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-md);font-size:13.5px;font-family:inherit;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none;transition:background .12s}
+.btn-primary:hover{background:var(--blue-d)}
+.btn-primary svg{width:14px;height:14px}
+.btn-sec{padding:9px 18px;background:var(--surf);color:var(--txt2);border:1px solid var(--bdr2);border-radius:var(--r-md);font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .12s}
+.btn-sec:hover{background:var(--surf3)}
+.btn-sec svg{width:14px;height:14px}
+
+/* ─── RESPONSIVE ─────────────────────────── */
+@media(max-width:900px){.dashboard{grid-template-columns:1fr 1fr}.insight-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){
+  .main{padding:16px 14px 48px}
+  .search-panel{padding:16px}
+  .search-row{flex-direction:column}
+  .dashboard{grid-template-columns:1fr 1fr}
+  .insight-grid{grid-template-columns:1fr}
+  .card{padding:14px 16px}
+  .card-top{flex-direction:column;gap:7px}
+  .card-arr{display:none}
+  .igrid{grid-template-columns:1fr}
+  .modal-header,.modal-body,.modal-footer,.modal-badges,.modal-timeline{padding-left:16px;padding-right:16px}
+  .vercel-pill{display:none}
+  .filters-row{gap:8px}
+  .filter-group{min-width:140px}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="gov-bar">Governo Federal — Portal Nacional de Contratações Públicas</div>
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="logo-box">PNCP</div>
+      <div class="brand-text">
+        <h1>Consulta de Licitações</h1>
+        <p>Dados abertos em tempo real</p>
+      </div>
+    </div>
+    <div class="vercel-pill">
+      <div class="vpill-dot"></div>
+      API conectada
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <div class="dash-card" id="dCard0">
+      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 017 7h2"/><path d="M15 7h2a5 5 0 010 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+      <div class="dash-label">Total encontrado</div>
+      <div class="dash-value" id="dTotal">—</div>
+      <div class="dash-sub" id="dTotalSub">Faça uma pesquisa</div>
+      <div class="dash-bullets" id="dBulletsTotal"></div>
+    </div>
+    <div class="dash-card accent-green">
+      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div class="dash-label">Abertas</div>
+      <div class="dash-value" id="dOpen">—</div>
+      <div class="dash-sub">Recebendo propostas</div>
+      <div class="dash-bullets" id="dBulletsOpen"></div>
+    </div>
+    <div class="dash-card accent-amber">
+      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="dash-label">Em julgamento</div>
+      <div class="dash-value" id="dJudge">—</div>
+      <div class="dash-sub">Análise de propostas</div>
+      <div class="dash-bullets" id="dBulletsJudge"></div>
+    </div>
+    <div class="dash-card accent-purple">
+      <div class="dash-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+      <div class="dash-label">Valor estimado</div>
+      <div class="dash-value" id="dValue" style="font-size:16px">—</div>
+      <div class="dash-sub">da página atual</div>
+      <div class="dash-bullets" id="dBulletsValue"></div>
+    </div>
+    <div class="dash-insight" id="dInsight" style="display:none">
+      <h3>Visão geral</h3>
+      <div class="insight-grid" id="insightGrid"></div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-panel">
+    <div class="sp-title">Pesquisar licitações</div>
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Objeto, produto, serviço…" value="notebook" autocomplete="off"/>
+      </div>
+      <button class="btn-search" onclick="doSearch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Buscar
+      </button>
+    </div>
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Estado (UF)</label>
+        <select id="filterUF" onchange="onUFChange()">
+          <option value="">Todos os estados</option>
+          <option value="AC">AC — Acre</option><option value="AL">AL — Alagoas</option>
+          <option value="AP">AP — Amapá</option><option value="AM">AM — Amazonas</option>
+          <option value="BA">BA — Bahia</option><option value="CE">CE — Ceará</option>
+          <option value="DF">DF — Distrito Federal</option><option value="ES">ES — Espírito Santo</option>
+          <option value="GO">GO — Goiás</option><option value="MA">MA — Maranhão</option>
+          <option value="MT">MT — Mato Grosso</option><option value="MS">MS — Mato Grosso do Sul</option>
+          <option value="MG">MG — Minas Gerais</option><option value="PA">PA — Pará</option>
+          <option value="PB">PB — Paraíba</option><option value="PR">PR — Paraná</option>
+          <option value="PE">PE — Pernambuco</option><option value="PI">PI — Piauí</option>
+          <option value="RJ">RJ — Rio de Janeiro</option><option value="RN">RN — Rio Grande do Norte</option>
+          <option value="RS">RS — Rio Grande do Sul</option><option value="RO">RO — Rondônia</option>
+          <option value="RR">RR — Roraima</option><option value="SC">SC — Santa Catarina</option>
+          <option value="SP">SP — São Paulo</option><option value="SE">SE — Sergipe</option>
+          <option value="TO">TO — Tocantins</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Município</label>
+        <select id="filterMun" onchange="doSearch()" disabled>
+          <option value="">Selecione um estado</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="filterStatus" onchange="doSearch()">
+          <option value="">Todos</option>
+          <option value="1">Recebendo proposta</option>
+          <option value="2">Em julgamento</option>
+          <option value="3">Encerrada</option>
+          <option value="4">Deserta/Fracassada</option>
+          <option value="5">Suspensa</option>
+          <option value="7">Homologada</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Modalidade</label>
+        <select id="filterModal" onchange="doSearch()">
+          <option value="">Todas</option>
+          <option value="6">Pregão eletrônico</option>
+          <option value="1">Concorrência</option>
+          <option value="8">Dispensa</option>
+          <option value="9">Inexigibilidade</option>
+          <option value="7">Pregão presencial</option>
+          <option value="4">Concurso</option>
+          <option value="5">Leilão</option>
+          <option value="12">Credenciamento</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="errBox"></div>
+  <div class="results-bar" id="resultsBar" style="display:none">
+    <div class="results-count" id="resCount"></div>
+    <div style="font-size:13px;color:var(--txt3)">Mais recentes primeiro</div>
+  </div>
+  <div id="cardList"></div>
+  <div id="pgArea"></div>
+</main>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-timeline" id="mTimeline"></div>
+    <div class="modal-header">
+      <div class="mh-left">
+        <div class="m-eyebrow" id="mEye"></div>
+        <div class="m-title" id="mTitle"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-badges" id="mBadges"></div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-footer">
+      <a id="mLink" href="#" target="_blank" rel="noopener" class="btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+        Ver no PNCP
+      </a>
+      <button class="btn-sec" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─ Config ─────────────────────────────────────────────────── */
+// No Vercel, o proxy é uma API Route relativa — sem necessidade de porta ou host externo
+const PROXY_BASE = '/api/pncp';
+
+const MODAL_MAP={1:'Concorrência',2:'Diálogo competitivo',3:'Manifestação de interesse',4:'Concurso',5:'Leilão',6:'Pregão eletrônico',7:'Pregão presencial',8:'Dispensa de licitação',9:'Inexigibilidade',10:'Pré-qualificação',12:'Credenciamento',13:'Seleção pública'};
+const SIT_MAP={1:'Recebendo proposta',2:'Em julgamento',3:'Encerrada',4:'Deserta/Fracassada',5:'Suspensa',6:'Anulada/Revogada',7:'Homologada',8:'Adjudicada'};
+const ESFERA_MAP={'F':'Federal','E':'Estadual','M':'Municipal','D':'Distrital'};
+const PODER_MAP={'E':'Executivo','L':'Legislativo','J':'Judiciário','M':'Ministério Público','D':'Defensoria'};
+
+const STATUS_FLOW=[
+  {label:'Publicada',      icon:'M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z'},
+  {label:'Prop. abertas',  icon:'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'},
+  {label:'Em julgamento',  icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'},
+  {label:'Homologada',     icon:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
+  {label:'Encerrada',      icon:'M5 13l4 4L19 7'},
+];
+
+let currentPage=1,totalPages=1,totalRecords=0,results=[];
+const PAGE_SIZE=10;
+
+/* ─ Helpers ─────────────────────────────────────────────────── */
+function bClass(s){return s===1?'b-open':s===2?'b-judge':(s===4||s===6)?'b-red':s===7?'b-purple':'b-closed';}
+function fBRL(v){if(!v&&v!==0)return'—';return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);}
+function fDate(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-?(\d{2})-?(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;try{return new Date(d).toLocaleDateString('pt-BR');}catch{return d;}}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function shortOrg(s){if(!s||s==='—')return'—';return s.length>55?s.slice(0,55)+'…':s;}
+
+/* ─ UF → Municípios via IBGE ─────────────────────────────── */
+async function onUFChange(){
+  const uf=document.getElementById('filterUF').value;
+  const sel=document.getElementById('filterMun');
+  if(!uf){sel.innerHTML='<option value="">Selecione um estado</option>';sel.disabled=true;doSearch();return;}
+  sel.innerHTML='<option value="">Carregando…</option>';sel.disabled=true;
+  try{
+    const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+    const d=await r.json();
+    sel.innerHTML='<option value="">Todos os municípios</option>'+d.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
+    sel.disabled=false;
+  }catch{sel.innerHTML='<option value="">Erro ao carregar</option>';sel.disabled=false;}
+  doSearch();
+}
+
+/* ─ Dashboard ────────────────────────────────────────────── */
+function updateDashboard(items,total){
+  const open=items.filter(i=>i.situacaoCompraId===1).length;
+  const judge=items.filter(i=>i.situacaoCompraId===2).length;
+  const closed=items.filter(i=>i.situacaoCompraId===3||i.situacaoCompraId===7).length;
+  const totalVal=items.reduce((a,i)=>a+(i.valorTotalEstimado||i.valorTotalHomologado||0),0);
+  const modMap={};items.forEach(i=>{const k=MODAL_MAP[i.modalidadeId]||'Outros';modMap[k]=(modMap[k]||0)+1;});
+  const topMod=Object.entries(modMap).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>`${k} (${v})`).join(', ')||'—';
+  const ufs=[...new Set(items.map(i=>i.unidadeOrgao?.ufSigla).filter(Boolean))].join(', ')||'—';
+  const orgs=[...new Set(items.map(i=>i.orgaoEntidade?.razaoSocial||i.orgaoEntidade?.nomeFantasia).filter(Boolean))].length;
+  const maxVal=Math.max(...items.map(i=>i.valorTotalEstimado||0));
+
+  document.getElementById('dTotal').textContent=total.toLocaleString('pt-BR');
+  document.getElementById('dTotalSub').textContent=`${items.length} na página atual`;
+  document.getElementById('dOpen').textContent=open;
+  document.getElementById('dJudge').textContent=judge;
+  document.getElementById('dValue').textContent=totalVal>0?fBRL(totalVal):'—';
+
+  document.getElementById('dBulletsTotal').innerHTML=`
+    <div class="dash-bullet">${total.toLocaleString('pt-BR')} licitações encontradas</div>
+    <div class="dash-bullet">${orgs} órgãos distintos nesta página</div>
+    <div class="dash-bullet">UFs: ${ufs}</div>`;
+  document.getElementById('dBulletsOpen').innerHTML=open>0?`
+    <div class="dash-bullet">${open} edital${open>1?'is':''} aceitando propostas</div>
+    <div class="dash-bullet">Verifique os prazos no edital</div>`:
+    `<div class="dash-bullet">Nenhuma aberta nesta página</div>`;
+  document.getElementById('dBulletsJudge').innerHTML=judge>0?`
+    <div class="dash-bullet">${judge} em avaliação de propostas</div>
+    <div class="dash-bullet">Aguardar resultado do julgamento</div>`:
+    `<div class="dash-bullet">Nenhuma em julgamento</div>`;
+  document.getElementById('dBulletsValue').innerHTML=`
+    <div class="dash-bullet">Modalidade principal: ${topMod}</div>
+    <div class="dash-bullet">${closed} encerrada${closed!==1?'s':''}/homologada${closed!==1?'s':''}</div>`;
+
+  document.getElementById('dInsight').style.display='block';
+  document.getElementById('insightGrid').innerHTML=`
+    <div class="insight-item"><div class="i-label">Maior valor estimado</div><div class="i-val">${maxVal>0?fBRL(maxVal):'—'}</div><div class="i-sub">nesta página</div></div>
+    <div class="insight-item"><div class="i-label">Pregão eletrônico</div><div class="i-val">${items.filter(i=>i.modalidadeId===6).length}</div><div class="i-sub">de ${items.length} licitações</div></div>
+    <div class="insight-item"><div class="i-label">Encerradas/Homologadas</div><div class="i-val">${closed}</div><div class="i-sub">processo finalizado</div></div>`;
+}
+
+/* ─ Search ───────────────────────────────────────────────── */
+async function doSearch(page){
+  if(!page){page=1;currentPage=1;}
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q){showErr('Digite uma palavra-chave para pesquisar.');return;}
+  clearErr();
+
+  const uf=document.getElementById('filterUF').value;
+  const mun=document.getElementById('filterMun').value;
+  const status=document.getElementById('filterStatus').value;
+  const modal=document.getElementById('filterModal').value;
+
+  document.getElementById('resultsBar').style.display='none';
+  document.getElementById('cardList').innerHTML='<div class="state-box"><div class="loading-spinner"></div><p>Consultando a API do PNCP…</p></div>';
+  document.getElementById('pgArea').innerHTML='';
+
+  let path=`/api/consulta/v1/contratacoes/proposta?palavraChave=${encodeURIComponent(q)}&pagina=${page}&tamanhoPagina=${PAGE_SIZE}`;
+  if(uf)    path+=`&uf=${uf}`;
+  if(mun)   path+=`&codigoMunicipioIbge=${mun}`;
+  if(status)path+=`&codigoSituacaoContratacao=${status}`;
+  if(modal) path+=`&modalidadeId=${modal}`;
+
+  try{
+    const r=await fetch(`${PROXY_BASE}${path}`,{signal:AbortSignal.timeout(15000)});
+    if(r.status===404){
+      document.getElementById('cardList').innerHTML=`<div class="state-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><p>Nenhuma licitação para <strong>"${esc(q)}"</strong></p><small>Tente outros filtros ou palavras-chave</small></div>`;
+      return;
+    }
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    results=data.data||[];
+    totalRecords=data.totalRegistros||0;
+    totalPages=Math.ceil(totalRecords/PAGE_SIZE)||1;
+    currentPage=page;
+    updateDashboard(results,totalRecords);
+    renderCards();
+  }catch(e){
+    document.getElementById('cardList').innerHTML=`<div class="state-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Erro ao buscar dados</p><small>${esc(e.message)}</small></div>`;
+  }
+}
+
+/* ─ Render Cards ─────────────────────────────────────────── */
+function renderCards(){
+  if(!results.length){document.getElementById('cardList').innerHTML='<div class="state-box"><p>Nenhum resultado.</p></div>';return;}
+  const s=(currentPage-1)*PAGE_SIZE+1,e=Math.min(currentPage*PAGE_SIZE,totalRecords);
+  document.getElementById('resultsBar').style.display='flex';
+  document.getElementById('resCount').innerHTML=`Exibindo <strong>${s}–${e}</strong> de <strong>${totalRecords.toLocaleString('pt-BR')}</strong> licitações`;
+
+  document.getElementById('cardList').innerHTML=results.map((item,i)=>{
+    const sit=item.situacaoCompraId;
+    const mod=MODAL_MAP[item.modalidadeId]||`Mod ${item.modalidadeId||'?'}`;
+    const valor=item.valorTotalEstimado||item.valorTotalHomologado;
+    const org=item.orgaoEntidade?.razaoSocial||item.orgaoEntidade?.nomeFantasia||'—';
+    const uf=item.unidadeOrgao?.ufSigla||'';
+    const mun=item.unidadeOrgao?.municipioNome||'';
+    const local=[mun,uf].filter(Boolean).join(' — ');
+    const obj=esc(item.objetoCompra||'(objeto não informado)');
+    return`<div class="card" onclick="openModal(${i})">
+      <div class="card-top"><div class="card-title">${obj.length>155?obj.slice(0,155)+'…':obj}</div><span class="badge ${bClass(sit)}">${SIT_MAP[sit]||'Desconhecido'}</span></div>
+      <div class="card-meta">
+        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>${esc(mod)}</span>
+        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Abertura: ${fDate(item.dataAberturaProposta)}</span>
+        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Enc.: ${fDate(item.dataEncerramentoProposta)}</span>
+      </div>
+      <div class="card-footer">
+        <span class="card-org"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>${esc(shortOrg(org))}${local?` — ${esc(local)}`:''}</span></span>
+        ${valor?`<span class="card-value">${fBRL(valor)}</span>`:''}
+      </div>
+      <span class="card-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+    </div>`;
+  }).join('');
+  renderPagination();
+}
+
+function renderPagination(){
+  const a=document.getElementById('pgArea');
+  if(totalPages<=1){a.innerHTML='';return;}
+  a.innerHTML=`<div class="pagination">
+    <button class="pg-btn" onclick="doSearch(${currentPage-1})" ${currentPage<=1?'disabled':''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>Anterior
+    </button>
+    <span class="pg-info">Página <strong>${currentPage}</strong> de <strong>${totalPages.toLocaleString('pt-BR')}</strong></span>
+    <button class="pg-btn" onclick="doSearch(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>
+      Próxima<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>`;
+}
+
+/* ─ Modal Timeline ───────────────────────────────────────── */
+function buildTimeline(sit){
+  let active=0,isError=false;
+  if(sit===1)active=1;else if(sit===2)active=2;else if(sit===7)active=3;
+  else if(sit===3)active=4;else if(sit===4||sit===6){isError=true;active=4;}
+  return STATUS_FLOW.map((step,i)=>{
+    let cls=i<active?'done':i===active?isError?'error':'active':'';
+    return`<div class="tl-step ${cls}">
+      <div class="tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${step.icon}"/></svg></div>
+      <div class="tl-label">${step.label}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ─ Modal Open ───────────────────────────────────────────── */
+function openModal(i){
+  const item=results[i];if(!item)return;
+  const sit=item.situacaoCompraId;
+  const mod=MODAL_MAP[item.modalidadeId]||`Modalidade ${item.modalidadeId}`;
+  const obj=item.objetoCompra||'—';
+  const orgNome=item.orgaoEntidade?.razaoSocial||item.orgaoEntidade?.nomeFantasia||'—';
+  const cnpj=item.orgaoEntidade?.cnpj||'—';
+  const esfera=ESFERA_MAP[item.orgaoEntidade?.esferaId]||'—';
+  const poder=PODER_MAP[item.orgaoEntidade?.poderId]||'—';
+  const uf=item.unidadeOrgao?.ufNome||item.unidadeOrgao?.ufSigla||'—';
+  const mun=item.unidadeOrgao?.municipioNome||'—';
+  const uasg=item.unidadeOrgao?.codigoUnidade||'—';
+  const nomeUA=item.unidadeOrgao?.nomeUnidade||'—';
+  const numCtrl=item.numeroControlePNCP||'';
+  const proc=item.numeroCompra||'—';
+
+  const bullets=[];
+  if(sit===1)bullets.push({c:'green',t:'Prazo de propostas em aberto — consulte o edital para participar.'});
+  if(sit===2)bullets.push({c:'amber',t:'Em julgamento: aguardar resultado da análise das propostas.'});
+  if(sit===7)bullets.push({c:'blue',t:'Homologada — contratação formal deverá ser publicada em breve.'});
+  if(sit===3)bullets.push({c:'purple',t:'Licitação encerrada. Consulte o resultado para detalhes.'});
+  if(sit===4||sit===6)bullets.push({c:'red',t:'Processo deserto, fracassado ou anulado — sem contratação prevista.'});
+  if(item.srp)bullets.push({c:'blue',t:'Sistema de Registro de Preços: múltiplos órgãos podem aderir à ata.'});
+  if(item.valorTotalEstimado>0)bullets.push({c:'green',t:`Valor estimado: ${fBRL(item.valorTotalEstimado)} — compare com referências de mercado.`});
+  if(item.modalidadeId===6)bullets.push({c:'blue',t:'Pregão eletrônico: participação remota, ampla concorrência entre fornecedores.'});
+  if(item.modalidadeId===8)bullets.push({c:'amber',t:'Dispensa de licitação: observe os requisitos legais específicos aplicáveis.'});
+  if(esfera==='Municipal')bullets.push({c:'purple',t:`Órgão municipal em ${mun}/${item.unidadeOrgao?.ufSigla||'—'}.`});
+  if(!bullets.length)bullets.push({c:'blue',t:'Consulte o edital completo no PNCP para informações detalhadas.'});
+
+  document.getElementById('mTimeline').innerHTML=buildTimeline(sit);
+  document.getElementById('mEye').textContent=mod;
+  document.getElementById('mTitle').textContent=obj.length>200?obj.slice(0,200)+'…':obj;
+  document.getElementById('mBadges').innerHTML=`
+    <span class="badge ${bClass(sit)}">${SIT_MAP[sit]||'Desconhecido'}</span>
+    <span class="tag">${esc(mod)}</span>
+    ${item.modoDisputaId===1?'<span class="tag">Modo aberto</span>':item.modoDisputaId===2?'<span class="tag">Modo fechado</span>':item.modoDisputaId===3?'<span class="tag">Aberto/Fechado</span>':''}
+    ${item.srp?'<span class="tag">Registro de Preço</span>':''}
+    <span class="tag">${esfera}</span><span class="tag">${poder}</span>`;
+
+  document.getElementById('mBody').innerHTML=`
+    <div class="isec"><div class="isec-title">Objeto da contratação</div><div class="obj-box">${esc(obj)}</div></div>
+    <div class="isec"><div class="isec-title">Principais informações</div>
+      <div class="bullets-list">${bullets.map(b=>`<div class="bl-item"><div class="bl-dot ${b.c}"></div><span>${esc(b.t)}</span></div>`).join('')}</div>
+    </div>
+    <div class="isec"><div class="isec-title">Valores</div>
+      <div class="igrid">
+        <div class="ii"><label>Valor estimado</label><p class="val-big">${fBRL(item.valorTotalEstimado)}</p></div>
+        <div class="ii"><label>Valor homologado</label><p class="val-big">${fBRL(item.valorTotalHomologado)}</p></div>
+      </div>
+    </div>
+    <div class="isec"><div class="isec-title">Datas</div>
+      <div class="igrid">
+        <div class="ii"><label>Abertura das propostas</label><p>${fDate(item.dataAberturaProposta)}</p></div>
+        <div class="ii"><label>Encerramento</label><p>${fDate(item.dataEncerramentoProposta)}</p></div>
+        <div class="ii"><label>Publicação PNCP</label><p>${fDate(item.dataPublicacaoPncp)}</p></div>
+        <div class="ii"><label>Última atualização</label><p>${fDate(item.dataAtualizacao)}</p></div>
+      </div>
+    </div>
+    <div class="isec"><div class="isec-title">Órgão contratante</div>
+      <div class="igrid">
+        <div class="ii full"><label>Razão social</label><p><strong>${esc(orgNome)}</strong></p></div>
+        <div class="ii"><label>CNPJ</label><p style="font-family:'IBM Plex Mono',monospace;font-size:13px">${esc(cnpj)}</p></div>
+        <div class="ii"><label>Esfera / Poder</label><p>${esfera} — ${poder}</p></div>
+        <div class="ii"><label>Unidade administrativa</label><p>${esc(nomeUA)}</p></div>
+        <div class="ii"><label>Código UASG</label><p>${esc(uasg)}</p></div>
+        <div class="ii"><label>Município / UF</label><p>${esc(mun)} / ${esc(uf)}</p></div>
+      </div>
+    </div>
+    <div class="isec"><div class="isec-title">Identificação</div>
+      <div class="igrid">
+        <div class="ii"><label>Número do processo</label><p>${esc(proc)}</p></div>
+        <div class="ii"><label>Ano / Sequencial</label><p>${item.anoCompra||'—'} / ${item.sequencialCompra||'—'}</p></div>
+        <div class="ii"><label>Registro de Preços</label><p>${item.srp?'Sim':'Não'}</p></div>
+        ${numCtrl?`<div class="ii full"><label>Controle PNCP</label><p style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--txt3)">${esc(numCtrl)}</p></div>`:''}
+      </div>
+    </div>`;
+
+  document.getElementById('mLink').href=numCtrl?`https://pncp.gov.br/app/editais/${numCtrl}`:'https://pncp.gov.br/app/editais';
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal();}
+function showErr(m){document.getElementById('errBox').innerHTML=`<div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--r-md);padding:13px 16px;font-size:14px;color:#991B1B;margin-bottom:14px">${esc(m)}</div>`;}
+function clearErr(){document.getElementById('errBox').innerHTML='';}
+
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// Inicia busca automática
+doSearch(1);
+</script>
+</body>
+</html>
