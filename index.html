@@ -135,6 +135,58 @@
     transition: 0.18s;
   }
   .icon-btn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-strong); }
+  .alert-bell { position: relative; }
+  .bell-badge {
+    position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px; background: var(--red); color: #fff; font-size: 0.66rem; font-weight: 700;
+    display: grid; place-items: center; font-family: var(--font-mono); box-shadow: 0 0 0 2px var(--bg);
+  }
+
+  /* combobox (município) */
+  .combo { position: relative; }
+  .combo .combo-caret { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .combo input { padding-right: 34px; }
+  .combo-pop {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30;
+    max-height: 280px; overflow-y: auto; background: var(--bg-2);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm); box-shadow: var(--shadow);
+    padding: 6px;
+  }
+  .combo-opt { padding: 9px 12px; border-radius: 9px; font-size: 0.9rem; cursor: pointer; color: var(--text-dim); }
+  .combo-opt:hover, .combo-opt.active { background: var(--surface-hover); color: var(--text); }
+  .combo-opt mark { background: var(--accent-soft); color: var(--accent); border-radius: 3px; }
+  .combo-empty { padding: 12px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+  /* NOVO badge nos cards */
+  .badge.b-new { background: var(--red); color: #fff; border-color: transparent; animation: pulseNew 1.6s ease-in-out infinite; }
+  @keyframes pulseNew { 0%,100% { box-shadow: 0 0 0 0 rgba(248,113,106,0.5); } 50% { box-shadow: 0 0 0 5px rgba(248,113,106,0); } }
+  .lic-card.is-new { border-color: rgba(248,113,106,0.4); }
+
+  /* alerts drawer reuse drawer styles; specific bits */
+  .alert-item {
+    border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px;
+    background: var(--surface); transition: 0.16s;
+  }
+  .alert-item:hover { border-color: var(--border-strong); }
+  .alert-item .ai-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+  .alert-item .ai-q { font-family: var(--font-display); font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+  .alert-item .ai-new { font-size: 0.66rem; font-weight: 700; background: var(--red); color: #fff; padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); }
+  .alert-item .ai-scope { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .alert-item .ai-scope span { background: var(--surface-2); padding: 3px 9px; border-radius: 999px; }
+  .alert-item .ai-actions { display: flex; gap: 8px; }
+  .alert-item .ai-btn { flex: 1; padding: 8px; border-radius: 9px; font-size: 0.82rem; font-weight: 600; border: 1px solid var(--border-strong); transition: 0.14s; }
+  .alert-item .ai-btn.run { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .alert-item .ai-btn.run:hover { background: var(--accent); color: #042; }
+  .alert-item .ai-btn.del:hover { background: var(--red); color: #fff; border-color: var(--red); }
+  .alerts-empty { text-align: center; color: var(--muted); padding: 40px 16px; font-size: 0.9rem; }
+  .alerts-empty svg { opacity: 0.4; margin-bottom: 12px; }
+  .btn-save-alert {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600;
+    padding: 7px 13px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent);
+    background: var(--accent-soft); transition: 0.14s; white-space: nowrap;
+  }
+  .btn-save-alert:hover { background: var(--accent); color: #042; }
+  .btn-save-alert.saved { border-color: var(--green); color: var(--green); background: rgba(52,211,153,0.12); cursor: default; }
 
   /* ============================================================
      HERO
@@ -505,6 +557,10 @@
     <div class="src-pill" id="srcPill" title="Status da conexão com a API do PNCP">
       <span class="src-dot" id="srcDot"></span><span id="srcText">Aguardando consulta</span>
     </div>
+    <button class="icon-btn alert-bell" id="alertsBtn" title="Meus alertas por palavra-chave" aria-label="Alertas">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="bell-badge" id="bellBadge" hidden>0</span>
+    </button>
     <button class="icon-btn" id="cfgBtn" title="Configurar fonte de dados / proxy" aria-label="Configurações">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
@@ -595,8 +651,12 @@
         <select class="ctrl" id="ufSel"><option value="">Carregando…</option></select>
       </div>
       <div class="field c3">
-        <label for="munSel">Município <span class="opt">opcional</span></label>
-        <select class="ctrl" id="munSel" disabled><option value="">Selecione a UF primeiro</option></select>
+        <label for="munInput">Município <span class="opt">digite ou selecione</span></label>
+        <div class="combo">
+          <input class="ctrl" id="munInput" type="text" placeholder="Selecione a UF primeiro" autocomplete="off" disabled />
+          <svg class="combo-caret" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 5l5 5 5-5"/></svg>
+          <div class="combo-pop" id="munPop" hidden></div>
+        </div>
       </div>
       <div class="field c2">
         <label for="statusSel">Status</label>
@@ -664,6 +724,18 @@
   </div>
 </aside>
 
+<!-- ===================== ALERTS DRAWER ===================== -->
+<div class="drawer-overlay" id="alertsOverlay"></div>
+<aside class="drawer" id="alertsDrawer" aria-label="Meus alertas">
+  <h3>Alertas por palavra-chave</h3>
+  <p class="dsub">Salve termos de interesse. A cada visita, o painel verifica o PNCP e destaca o que é <b style="color:var(--red);">novo</b> desde a última vez que você abriu o alerta.</p>
+  <div id="alertsList"></div>
+  <div class="drawer-actions">
+    <button class="btn-primary" id="refreshAlerts" style="grid-column:unset;flex:1;">Verificar agora</button>
+    <button class="btn-ghost" id="closeAlerts">Fechar</button>
+  </div>
+</aside>
+
 <!-- ===================== FOOTER ===================== -->
 <footer class="foot">
   <div class="wrap">
@@ -702,7 +774,7 @@
 const CFG = {
   PNCP_API: "https://pncp.gov.br/api",          // base do PNCP (consulta + pncp)
   IBGE_API: "https://servicodados.ibge.gov.br/api/v1/localidades",
-  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public" },
+  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts" },
   HTTP_TIMEOUT: 18000,
   PAGE_SIZE: 20,
   CACHE_TTL: 1000 * 60 * 10,                      // 10 min
@@ -765,8 +837,21 @@ const state = {
   proxyBase: localStorage.getItem(CFG.LS.PROXY) || "",
   allowPublic: localStorage.getItem(CFG.LS.PUBLIC) === "1",
   lastStrategy: null,
-  cache: new Map()
+  cache: new Map(),
+  munList: [],
+  munByName: new Map(),
+  alerts: [],
+  matchedAlert: null
 };
+
+function loadAlerts() {
+  try { state.alerts = JSON.parse(localStorage.getItem(CFG.LS.ALERTS) || "[]"); }
+  catch (e) { state.alerts = []; }
+  if (!Array.isArray(state.alerts)) state.alerts = [];
+}
+function saveAlerts() {
+  try { localStorage.setItem(CFG.LS.ALERTS, JSON.stringify(state.alerts)); } catch (e) {}
+}
 
 /* ============================== 3. UTIL ============================== */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -1142,28 +1227,58 @@ async function onUFChange() {
   const sel = $("#ufSel");
   state.uf = sel.value;
   state.ufNome = sel.options[sel.selectedIndex] ? (sel.options[sel.selectedIndex].dataset.nome || "") : "";
-  const munSel = $("#munSel");
+  const input = $("#munInput");
+  // reset município
+  state.munId = ""; state.munNome = ""; input.value = ""; state.munList = []; state.munByName.clear();
+  hideMunPop();
   if (!state.uf) {
-    munSel.disabled = true; munSel.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-    state.munId = ""; state.munNome = ""; updateSearchBtn();
-    return;
+    input.disabled = true; input.placeholder = "Selecione a UF primeiro"; updateSearchBtn(); return;
   }
-  munSel.disabled = true; munSel.innerHTML = '<option value="">Carregando municípios…</option>';
+  input.disabled = true; input.placeholder = "Carregando municípios…";
   try {
     const muns = await ibgeService.municipios(state.uf);
-    munSel.innerHTML = '<option value="">Selecione o município…</option>' +
-      muns.map((m) => '<option value="' + m.id + '" data-nome="' + esc(m.nome) + '">' + esc(m.nome) + '</option>').join("");
-    munSel.disabled = false;
+    state.munList = muns;
+    state.munByName.clear();
+    muns.forEach((m) => state.munByName.set(m.nome.toLowerCase(), m));
+    input.disabled = false; input.placeholder = "Digite ou selecione (" + muns.length + " municípios)";
   } catch (e) {
-    munSel.innerHTML = '<option value="">Erro ao carregar</option>';
-    toast("Falha ao carregar municípios.");
+    input.placeholder = "Erro ao carregar municípios"; toast("Falha ao carregar municípios.");
   }
   updateSearchBtn();
 }
-function onMunChange() {
-  const sel = $("#munSel");
-  state.munId = sel.value;
-  state.munNome = sel.options[sel.selectedIndex] ? (sel.options[sel.selectedIndex].dataset.nome || "") : "";
+
+// ---- combobox município ----
+function renderMunPop(filter) {
+  const pop = $("#munPop");
+  const f = (filter || "").trim().toLowerCase();
+  let list = state.munList;
+  if (f) list = list.filter((m) => m.nome.toLowerCase().includes(f));
+  if (!list.length) { pop.innerHTML = '<div class="combo-empty">Nenhum município encontrado</div>'; pop.hidden = false; return; }
+  const re = f ? new RegExp("(" + f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig") : null;
+  pop.innerHTML = list.slice(0, 80).map((m) => {
+    const label = re ? esc(m.nome).replace(re, "<mark>$1</mark>") : esc(m.nome);
+    return '<div class="combo-opt" data-id="' + m.id + '" data-nome="' + esc(m.nome) + '">' + label + '</div>';
+  }).join("");
+  pop.hidden = false;
+  $$(".combo-opt", pop).forEach((o) => o.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    selectMun(o.dataset.id, o.dataset.nome);
+  }));
+}
+function selectMun(id, nome) {
+  state.munId = id; state.munNome = nome;
+  $("#munInput").value = nome;
+  hideMunPop();
+  updateSearchBtn();
+}
+function hideMunPop() { const p = $("#munPop"); if (p) p.hidden = true; }
+function onMunInput() {
+  const input = $("#munInput");
+  const val = input.value.trim();
+  const exact = state.munByName.get(val.toLowerCase());
+  if (exact) { state.munId = exact.id; state.munNome = exact.nome; }
+  else { state.munId = ""; state.munNome = val ? val : ""; }
+  renderMunPop(val);
   updateSearchBtn();
 }
 
@@ -1174,6 +1289,7 @@ async function runSearch(reset = true) {
   state.keyword = kw;
   state.searchMode = !!kw;
   state.status = $("#statusSel").value;
+  state.matchedAlert = (!!kw) ? findAlert(kw, state.uf, state.status) : null;
 
   if (!kw && !state.munId) { toast("Digite uma palavra-chave ou selecione um município."); return; }
 
@@ -1188,6 +1304,15 @@ async function runSearch(reset = true) {
     if (state.searchMode) await searchByKeyword(reset);
     else await searchByMunicipio(reset);
     renderResults();
+    // marca como "vistos" os itens do alerta correspondente
+    if (state.matchedAlert) {
+      const ids = state.items.map((i) => i.numeroControlePNCP).filter(Boolean);
+      const merged = Array.from(new Set([...ids, ...(state.matchedAlert.seen || [])]));
+      state.matchedAlert.seen = merged.slice(0, 500);
+      state.matchedAlert.lastCheckedAt = Date.now();
+      state.matchedAlert.newCount = 0;
+      saveAlerts(); updateBellBadge();
+    }
   } catch (e) {
     renderErrorState(e);
   } finally {
@@ -1202,13 +1327,19 @@ async function searchByKeyword(reset) {
   });
   let novos = r.items;
   // refino client-side por município (a /search filtra por UF; município por nome)
-  if (state.munNome) {
+  if (state.munId && state.munNome) {
     const alvo = state.munNome.toLowerCase();
     novos = novos.filter((c) => (c.unidadeOrgao.municipioNome || "").toLowerCase() === alvo);
   }
   const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
-  novos.forEach((c) => { if (c.numeroControlePNCP && !seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
-  state.totalRegistros = r.total;
+  const alertSeen = state.matchedAlert ? new Set(state.matchedAlert.seen || []) : null;
+  novos.forEach((c) => {
+    if (c.numeroControlePNCP && !seen.has(c.numeroControlePNCP)) {
+      seen.add(c.numeroControlePNCP);
+      if (alertSeen) c._isNew = !alertSeen.has(c.numeroControlePNCP);
+      state.items.push(c);
+    }
+  });
   state.totalPaginas = Math.max(1, Math.ceil(r.total / CFG.SEARCH_PAGE));
 }
 
@@ -1278,6 +1409,16 @@ function renderResults() {
     ? (state.uf ? esc(state.uf) : 'Brasil') + (state.munNome ? ' · ' + esc(state.munNome) : '')
     : esc(state.uf);
 
+  const alreadySaved = state.searchMode && !!findAlert(state.keyword, state.uf, state.status);
+  const saveBtn = state.searchMode
+    ? '<button class="btn-save-alert' + (alreadySaved ? ' saved' : '') + '" id="btnSaveAlert" data-saved-label="' +
+        '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.4&quot;><path d=&quot;M20 6 9 17l-5-5&quot;/></svg> Alerta salvo">' +
+        (alreadySaved
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg> Alerta salvo'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Criar alerta') +
+      '</button>'
+    : '';
+
   root.innerHTML =
     '<div class="results-bar">' +
       '<h3>' + titulo + ' <small>· ' + state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '') + '</small></h3>' +
@@ -1285,6 +1426,7 @@ function renderResults() {
         '<span class="chip">' + (state.searchMode ? 'Escopo: <b>' + escopo + '</b>' : 'Estimado: <b>' + fmtBRLCompact(somaEst) + '</b>') + '</span>' +
         (state.searchMode ? '' : '<span class="chip">Homologado: <b>' + fmtBRLCompact(somaHom) + '</b></span>') +
         '<span class="chip">' + (state.searchMode ? 'Busca por <b>objeto</b>' : 'Período: <b>' + state.periodo + 'd</b>') + '</span>' +
+        saveBtn +
       '</div>' +
     '</div>' +
     '<div class="card-grid" id="cardGrid"></div>' +
@@ -1292,6 +1434,9 @@ function renderResults() {
 
   const grid = $("#cardGrid");
   state.items.forEach((c, i) => grid.appendChild(buildCard(c, i)));
+
+  const sb = $("#btnSaveAlert");
+  if (sb && !alreadySaved) sb.onclick = addAlertFromCurrent;
 
   if (state.pagina < state.totalPaginas) {
     const btn = el("button", { class: "btn-ghost" }, "Carregar mais (página " + (state.pagina + 1) + " de " + state.totalPaginas + ")");
@@ -1309,14 +1454,14 @@ function statusTag(c) {
 
 function buildCard(c, idx) {
   const tag = statusTag(c);
-  const card = el("div", { class: "lic-card", style: "animation-delay:" + Math.min(idx * 0.035, 0.5) + "s" });
+  const card = el("div", { class: "lic-card" + (c._isNew ? " is-new" : ""), style: "animation-delay:" + Math.min(idx * 0.035, 0.5) + "s" });
   const valor = Number(c.valorTotalHomologado) > 0 ? c.valorTotalHomologado : c.valorTotalEstimado;
   const valLabel = Number(c.valorTotalHomologado) > 0 ? "Valor homologado" : "Valor estimado";
   const unidade = c.unidadeOrgao || {};
   card.innerHTML =
     '<div class="lic-card-head">' +
       '<span class="badge b-mod">' + esc(c.modalidadeNome || "Modalidade " + c.modalidadeId) + '</span>' +
-      '<span class="st-tag ' + tag.cls + '"><span class="st-dot"></span>' + esc(tag.nome) + '</span>' +
+      (c._isNew ? '<span class="badge b-new">NOVO</span>' : '<span class="st-tag ' + tag.cls + '"><span class="st-dot"></span>' + esc(tag.nome) + '</span>') +
     '</div>' +
     '<div class="lic-obj">' + esc(c.objetoCompra || "Objeto não informado") + '</div>' +
     '<div class="lic-meta">' +
@@ -1571,14 +1716,103 @@ async function saveCfg() {
   }
 }
 
+/* ============================== 6b. ALERTAS ============================== */
+function alertKey(q, uf, status) {
+  return (q || "").trim().toLowerCase() + "|" + (uf || "") + "|" + (status || "");
+}
+function findAlert(q, uf, status) {
+  const k = alertKey(q, uf, status);
+  return state.alerts.find((a) => alertKey(a.q, a.uf, a.status) === k) || null;
+}
+function addAlertFromCurrent() {
+  const q = state.keyword;
+  if (!q) { toast("Faça uma busca por palavra-chave para criar um alerta."); return; }
+  if (findAlert(q, state.uf, state.status)) { toast("Você já tem um alerta para esses termos."); return; }
+  const seen = state.items.map((i) => i.numeroControlePNCP).filter(Boolean);
+  state.alerts.unshift({
+    id: "al_" + Date.now().toString(36),
+    q: q, uf: state.uf, status: state.status,
+    createdAt: Date.now(), lastCheckedAt: Date.now(),
+    seen: seen.slice(0, 500), newCount: 0
+  });
+  saveAlerts();
+  renderAlertsList(); updateBellBadge();
+  toast('✓ Alerta criado para "' + esc(q) + '". Vou destacar o que for novo nas próximas visitas.');
+  const btn = $("#btnSaveAlert"); if (btn) { btn.classList.add("saved"); btn.innerHTML = btn.dataset.savedLabel; }
+}
+function removeAlert(id) {
+  state.alerts = state.alerts.filter((a) => a.id !== id);
+  saveAlerts(); renderAlertsList(); updateBellBadge();
+}
+function updateBellBadge() {
+  const total = state.alerts.reduce((s, a) => s + (a.newCount || 0), 0);
+  const b = $("#bellBadge");
+  if (total > 0) { b.hidden = false; b.textContent = total > 99 ? "99+" : String(total); }
+  else b.hidden = true;
+}
+async function refreshAlerts() {
+  if (!state.alerts.length) { updateBellBadge(); renderAlertsList(); return; }
+  for (const a of state.alerts) {
+    try {
+      const r = await pncpService.searchEditais({ q: a.q, uf: a.uf, status: a.status, pagina: 1 });
+      const seen = new Set(a.seen || []);
+      a.newCount = r.items.filter((it) => it.numeroControlePNCP && !seen.has(it.numeroControlePNCP)).length;
+    } catch (e) { /* mantém contagem anterior */ }
+  }
+  saveAlerts(); updateBellBadge(); renderAlertsList();
+}
+function renderAlertsList() {
+  const root = $("#alertsList");
+  if (!root) return;
+  if (!state.alerts.length) {
+    root.innerHTML =
+      '<div class="alerts-empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
+      '<div>Nenhum alerta ainda.</div><div style="margin-top:6px;font-size:0.82rem;">Faça uma busca por palavra-chave e clique em <b>Criar alerta</b>.</div></div>';
+    return;
+  }
+  const statusNome = (v) => (STATUS_BUSCA.find((s) => s.v === v) || {}).nome || "Todos os status";
+  root.innerHTML = state.alerts.map((a) =>
+    '<div class="alert-item" data-id="' + a.id + '">' +
+      '<div class="ai-top"><div class="ai-q"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>' + esc(a.q) + '</div>' +
+        (a.newCount > 0 ? '<span class="ai-new">' + a.newCount + ' novo' + (a.newCount > 1 ? 's' : '') + '</span>' : '') + '</div>' +
+      '<div class="ai-scope"><span>' + (a.uf ? esc(a.uf) : 'Brasil') + '</span><span>' + esc(statusNome(a.status)) + '</span></div>' +
+      '<div class="ai-actions"><button class="ai-btn run" data-act="run">Buscar agora</button><button class="ai-btn del" data-act="del">Remover</button></div>' +
+    '</div>'
+  ).join("");
+  $$(".alert-item", root).forEach((node) => {
+    const id = node.dataset.id;
+    node.querySelector('[data-act="run"]').onclick = () => runAlert(id);
+    node.querySelector('[data-act="del"]').onclick = () => removeAlert(id);
+  });
+}
+function runAlert(id) {
+  const a = state.alerts.find((x) => x.id === id);
+  if (!a) return;
+  closeAlerts();
+  $("#kwInput").value = a.q;
+  $("#statusSel").value = a.status || "";
+  if (a.uf) { $("#ufSel").value = a.uf; onUFChange(); }
+  updateSearchBtn();
+  runSearch(true);
+  $("#searchPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function openAlerts() { renderAlertsList(); $("#alertsOverlay").classList.add("open"); $("#alertsDrawer").classList.add("open"); }
+function closeAlerts() { $("#alertsOverlay").classList.remove("open"); $("#alertsDrawer").classList.remove("open"); }
+
 /* ============================== 7. CONTROLLER ============================== */
 function init() {
   populateModalidades();
   populateStatus();
+  loadAlerts();
   loadHero();
+  refreshAlerts();
 
   $("#ufSel").addEventListener("change", onUFChange);
-  $("#munSel").addEventListener("change", onMunChange);
+  // combobox município
+  $("#munInput").addEventListener("input", onMunInput);
+  $("#munInput").addEventListener("focus", () => { if (state.munList.length) renderMunPop($("#munInput").value); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".combo")) hideMunPop(); });
+
   $("#searchBtn").addEventListener("click", () => runSearch(true));
   $("#kwInput").addEventListener("input", updateSearchBtn);
   $("#kwInput").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("#searchBtn").disabled) runSearch(true); });
@@ -1586,12 +1820,19 @@ function init() {
     $("#kwInput").value = b.dataset.kw; updateSearchBtn(); runSearch(true);
     $("#searchPanel").scrollIntoView({ behavior: "smooth", block: "start" });
   }));
+
   $("#cfgBtn").addEventListener("click", openDrawer);
   $("#closeDrawer").addEventListener("click", closeDrawer);
   $("#drawerOverlay").addEventListener("click", closeDrawer);
   $("#saveCfg").addEventListener("click", saveCfg);
+
+  $("#alertsBtn").addEventListener("click", openAlerts);
+  $("#closeAlerts").addEventListener("click", closeAlerts);
+  $("#alertsOverlay").addEventListener("click", closeAlerts);
+  $("#refreshAlerts").addEventListener("click", () => { toast("Verificando alertas no PNCP…"); refreshAlerts(); });
+
   $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); closeAlerts(); hideMunPop(); } });
 
   if (state.proxyBase) updateSrcPill("warn");
 }
