@@ -380,6 +380,8 @@
     border: 1px solid var(--border); background: var(--surface); transition: 0.14s;
   }
   .kw-tag:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .kw-tag.active { border-color: var(--accent); color: #042; background: var(--accent); font-weight: 600; }
+  .kw-tag.active::before { content: "✓ "; }
 
   .field label .opt { font-size: 0.68rem; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
   .filters-hint { font-size: 0.8rem; color: var(--muted); margin-top: 14px; line-height: 1.5; }
@@ -692,7 +694,7 @@
       </button>
     </div>
     <div class="kw-suggest" id="kwSuggest">
-      <span>Sugestões:</span>
+      <span>Sugestões <i style="color:var(--muted);font-style:normal;">(selecione uma ou mais)</i>:</span>
       <button class="kw-tag" data-kw="merenda escolar">merenda escolar</button>
       <button class="kw-tag" data-kw="transporte escolar">transporte escolar</button>
       <button class="kw-tag" data-kw="medicamentos">medicamentos</button>
@@ -1160,6 +1162,13 @@ const pncpService = {
       return Array.isArray(data) ? data : (data && data.data ? data.data : []);
     } catch (e) { return []; }
   },
+  // Resultado (vencedor) de um item específico.
+  async resultadosItem(cnpj, ano, seq, numeroItem) {
+    try {
+      const { data } = await pncpFetch("/pncp/v1/orgaos/" + cnpj + "/compras/" + ano + "/" + seq + "/itens/" + numeroItem + "/resultados");
+      return Array.isArray(data) ? data : (data && data.data ? data.data : []);
+    } catch (e) { return []; }
+  },
   // Itens da contratação (API pncp/v1). numeroControlePNCP -> cnpj/ano/sequencial.
   async itens(numeroControlePNCP) {
     const ref = parseControle(numeroControlePNCP);
@@ -1309,6 +1318,21 @@ function updateSearchBtn() {
   $("#modSel").disabled = !muniMode;
   $("#periodSel").disabled = !muniMode;
 }
+function toggleKwChip(term) {
+  const input = $("#kwInput");
+  const terms = parseTerms(input.value);
+  const low = term.toLowerCase();
+  const idx = terms.findIndex((t) => t.toLowerCase() === low);
+  if (idx >= 0) terms.splice(idx, 1);
+  else terms.push(term);
+  input.value = terms.join(", ");
+  refreshKwChips();
+  updateSearchBtn();
+}
+function refreshKwChips() {
+  const active = new Set(parseTerms($("#kwInput").value).map((t) => t.toLowerCase()));
+  $$(".kw-tag").forEach((b) => b.classList.toggle("active", active.has((b.dataset.kw || "").toLowerCase())));
+}
 async function onUFChange() {
   const sel = $("#ufSel");
   state.uf = sel.value;
@@ -1407,11 +1431,21 @@ async function runSearch(reset = true) {
   }
 }
 
+function parseTerms(kw) { return (kw || "").split(",").map((s) => s.trim()).filter(Boolean); }
+
 async function searchByKeyword(reset) {
-  const r = await pncpService.searchEditais({
-    q: state.keyword, uf: state.uf, status: state.status, pagina: state.pagina
-  });
-  let novos = r.items;
+  const terms = parseTerms(state.keyword);
+  const useTerms = terms.length ? terms : (state.keyword ? [state.keyword] : []);
+  let novos = [], total = 0, maxPag = 1;
+  const dedupTerm = new Set();
+  for (const t of useTerms) {
+    const r = await pncpService.searchEditais({ q: t, uf: state.uf, status: state.status, pagina: state.pagina });
+    total += r.total || 0;
+    maxPag = Math.max(maxPag, Math.ceil((r.total || 0) / CFG.SEARCH_PAGE) || 1);
+    r.items.forEach((it) => {
+      if (it.numeroControlePNCP && !dedupTerm.has(it.numeroControlePNCP)) { dedupTerm.add(it.numeroControlePNCP); novos.push(it); }
+    });
+  }
   // refino client-side por município (a /search filtra por UF; município por nome)
   if (state.munId && state.munNome) {
     const alvo = state.munNome.toLowerCase();
@@ -1426,7 +1460,8 @@ async function searchByKeyword(reset) {
       state.items.push(c);
     }
   });
-  state.totalPaginas = Math.max(1, Math.ceil(r.total / CFG.SEARCH_PAGE));
+  state.totalRegistros = total;
+  state.totalPaginas = maxPag;
 }
 
 async function searchByMunicipio(reset) {
@@ -1711,6 +1746,7 @@ function renderModalBody(c, ref) {
     '</div>' +
     '<div class="section-title">Itens da contratação</div>' +
     '<div class="items-wrap" id="itemsWrap"><div class="items-mini-load"><div class="spinner" style="width:26px;height:26px;"></div><div style="margin-top:10px;">Carregando itens…</div></div></div>' +
+    '<div id="resultSection"></div>' +
     '<div class="section-title">Documentos &amp; editais</div>' +
     '<div id="arqWrap"><div class="items-mini-load">Carregando documentos…</div></div>';
 
@@ -1737,29 +1773,82 @@ function renderModalBody(c, ref) {
   };
   $("#modalAnaliseBtn").onclick = () => openAnalise(c);
 
-  loadModalItems(ref);
+  loadModalItems(ref, c);
   loadModalArquivos(ref);
 }
 
-async function loadModalItems(ref) {
+function isEncerrada(c) {
+  if (Number(c.valorTotalHomologado) > 0) return true;
+  if (c.dataEncerramentoProposta && Date.now() > new Date(c.dataEncerramentoProposta).getTime()) return true;
+  const s = SITUACAO[c.situacaoCompraId];
+  return !!(s && s.terminal);
+}
+
+async function loadModalItems(ref, c) {
   const wrap = $("#itemsWrap");
   if (!wrap) return;
   if (!ref) { wrap.innerHTML = '<div class="items-mini-load">Itens não disponíveis para este registro.</div>'; return; }
+  let itens = null;
   try {
-    const itens = await pncpService.itens(ref.cnpj + "-1-" + String(ref.seq).padStart(6, "0") + "/" + ref.ano);
-    if (!itens || !itens.length) { wrap.innerHTML = '<div class="items-mini-load">Sem itens detalhados disponíveis.</div>'; return; }
-    const rows = itens.slice(0, 50).map((it, i) =>
-      '<tr><td class="num">' + (it.numeroItem || (i + 1)) + '</td>' +
-      '<td>' + esc(it.descricao || it.materialOuServicoNome || "—") + '</td>' +
-      '<td class="num">' + fmtInt(it.quantidade) + (it.unidadeMedida ? " " + esc(it.unidadeMedida) : "") + '</td>' +
-      '<td class="num">' + fmtBRL(it.valorUnitarioEstimado) + '</td>' +
-      '<td class="num">' + fmtBRL(it.valorTotal != null ? it.valorTotal : (Number(it.valorUnitarioEstimado) * Number(it.quantidade))) + '</td></tr>'
-    ).join("");
-    wrap.innerHTML =
-      '<table class="items-table"><thead><tr><th>#</th><th>Descrição</th><th style="text-align:right;">Qtd.</th><th style="text-align:right;">Vlr. unit.</th><th style="text-align:right;">Total</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    itens = await pncpService.itens(ref.cnpj + "-1-" + String(ref.seq).padStart(6, "0") + "/" + ref.ano);
+    if (!itens || !itens.length) { wrap.innerHTML = '<div class="items-mini-load">Sem itens detalhados disponíveis.</div>'; }
+    else {
+      const rows = itens.slice(0, 50).map((it, i) =>
+        '<tr><td class="num">' + (it.numeroItem || (i + 1)) + '</td>' +
+        '<td>' + esc(it.descricao || it.materialOuServicoNome || "—") + '</td>' +
+        '<td class="num">' + fmtInt(it.quantidade) + (it.unidadeMedida ? " " + esc(it.unidadeMedida) : "") + '</td>' +
+        '<td class="num">' + fmtBRL(it.valorUnitarioEstimado) + '</td>' +
+        '<td class="num">' + fmtBRL(it.valorTotal != null ? it.valorTotal : (Number(it.valorUnitarioEstimado) * Number(it.quantidade))) + '</td></tr>'
+      ).join("");
+      wrap.innerHTML =
+        '<table class="items-table"><thead><tr><th>#</th><th>Descrição</th><th style="text-align:right;">Qtd.</th><th style="text-align:right;">Vlr. unit.</th><th style="text-align:right;">Total</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
   } catch (e) {
     wrap.innerHTML = '<div class="items-mini-load">Itens indisponíveis no momento.</div>';
   }
+  // Resultado / vencedores — só para licitações encerradas/homologadas.
+  if (c && isEncerrada(c) && itens && itens.length) loadModalResultados(ref, itens);
+}
+
+async function loadModalResultados(ref, itens) {
+  const sec = $("#resultSection");
+  if (!sec) return;
+  sec.innerHTML = '<div class="section-title">Resultado · vencedores</div><div class="items-wrap"><div class="items-mini-load"><div class="spinner" style="width:24px;height:24px;"></div><div style="margin-top:10px;">Buscando resultado dos itens…</div></div></div>';
+  const alvo = itens.slice(0, 25);
+  const settled = await Promise.allSettled(alvo.map((it) =>
+    pncpService.resultadosItem(ref.cnpj, ref.ano, ref.seq, it.numeroItem).then((r) => ({ it, r }))
+  ));
+  const linhas = [];
+  let totalHom = 0;
+  settled.forEach((s) => {
+    if (s.status !== "fulfilled") return;
+    const it = s.value.it;
+    const resultados = s.value.r || [];
+    if (!resultados.length) return;
+    const venc = resultados.find((x) => /informado|homolog|venced|classific/i.test(x.situacaoCompraItemResultadoNome || "")) || resultados[0];
+    const fornecedor = venc.nomeRazaoSocialFornecedor || venc.razaoSocialFornecedor || venc.nomeFornecedor || "—";
+    const ni = venc.niFornecedor || venc.cnpjCpfFornecedor || "";
+    const vUnit = venc.valorUnitarioHomologado != null ? venc.valorUnitarioHomologado : venc.valorUnitario;
+    const vTot = venc.valorTotalHomologado != null ? venc.valorTotalHomologado : (Number(vUnit) * Number(venc.quantidadeHomologada || it.quantidade || 0));
+    if (vTot) totalHom += Number(vTot) || 0;
+    linhas.push(
+      '<tr><td class="num">' + (it.numeroItem || "—") + '</td>' +
+      '<td>' + esc((it.descricao || it.materialOuServicoNome || "—")) + '</td>' +
+      '<td><b>' + esc(fornecedor) + '</b>' + (ni ? '<br><span style="color:var(--muted);font-family:var(--font-mono);font-size:0.78rem;">' + esc(ni) + '</span>' : '') + '</td>' +
+      '<td class="num">' + fmtBRL(vUnit) + '</td>' +
+      '<td class="num" style="color:var(--green);">' + fmtBRL(vTot) + '</td></tr>'
+    );
+  });
+  if (!linhas.length) {
+    sec.innerHTML = '<div class="section-title">Resultado · vencedores</div><div class="items-wrap"><div class="items-mini-load">Resultado ainda não publicado para os itens (ou licitação sem adjudicação registrada no PNCP).</div></div>';
+    return;
+  }
+  sec.innerHTML =
+    '<div class="section-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>Resultado · vencedores</div>' +
+    '<div class="items-wrap"><table class="items-table"><thead><tr><th>#</th><th>Item</th><th>Fornecedor vencedor</th><th style="text-align:right;">Vlr. unit. homol.</th><th style="text-align:right;">Total homol.</th></tr></thead><tbody>' +
+    linhas.join("") +
+    (totalHom > 0 ? '<tr><td colspan="4" style="text-align:right;font-weight:600;color:var(--text);">Total homologado</td><td class="num" style="color:var(--green);font-weight:700;">' + fmtBRL(totalHom) + '</td></tr>' : '') +
+    '</tbody></table></div>';
 }
 
 async function loadModalArquivos(ref) {
@@ -1863,9 +1952,15 @@ async function refreshAlerts() {
   if (!state.alerts.length) { updateBellBadge(); renderAlertsList(); return; }
   for (const a of state.alerts) {
     try {
-      const r = await pncpService.searchEditais({ q: a.q, uf: a.uf, status: a.status, pagina: 1 });
+      const terms = parseTerms(a.q);
+      const useTerms = terms.length ? terms : [a.q];
       const seen = new Set(a.seen || []);
-      a.newCount = r.items.filter((it) => it.numeroControlePNCP && !seen.has(it.numeroControlePNCP)).length;
+      const novos = new Set();
+      for (const t of useTerms) {
+        const r = await pncpService.searchEditais({ q: t, uf: a.uf, status: a.status, pagina: 1 });
+        r.items.forEach((it) => { if (it.numeroControlePNCP && !seen.has(it.numeroControlePNCP)) novos.add(it.numeroControlePNCP); });
+      }
+      a.newCount = novos.size;
     } catch (e) { /* mantém contagem anterior */ }
   }
   saveAlerts(); updateBellBadge(); renderAlertsList();
@@ -1901,6 +1996,7 @@ function runAlert(id) {
   $("#kwInput").value = a.q;
   $("#statusSel").value = a.status || "";
   if (a.uf) { $("#ufSel").value = a.uf; onUFChange(); }
+  refreshKwChips();
   updateSearchBtn();
   runSearch(true);
   $("#searchPanel").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2171,12 +2267,9 @@ function init() {
   document.addEventListener("click", (e) => { if (!e.target.closest(".combo")) hideMunPop(); });
 
   $("#searchBtn").addEventListener("click", () => runSearch(true));
-  $("#kwInput").addEventListener("input", updateSearchBtn);
+  $("#kwInput").addEventListener("input", () => { updateSearchBtn(); refreshKwChips(); });
   $("#kwInput").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("#searchBtn").disabled) runSearch(true); });
-  $$(".kw-tag").forEach((b) => b.addEventListener("click", () => {
-    $("#kwInput").value = b.dataset.kw; updateSearchBtn(); runSearch(true);
-    $("#searchPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-  }));
+  $$(".kw-tag").forEach((b) => b.addEventListener("click", () => { toggleKwChip(b.dataset.kw); }));
 
   $("#cfgBtn").addEventListener("click", openDrawer);
   $("#closeDrawer").addEventListener("click", closeDrawer);
