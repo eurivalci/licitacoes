@@ -920,6 +920,7 @@ const state = {
   munByName: new Map(),
   alerts: [],
   matchedAlert: null,
+  searchTermsCount: 1,
   favs: [],
   analiseEndpoint: localStorage.getItem(CFG.LS.ANALISE) || ""
 };
@@ -956,10 +957,19 @@ const el = (tag, attrs = {}, html) => {
 };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = (u) => {
+  if (!u || typeof u !== "string") return null;
+  const s = u.trim();
+  return /^https?:\/\//i.test(s) ? s : null;
+};
 
 const fmtBRL = (v) => {
   if (v == null || isNaN(v)) return "—";
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
+};
+const fmtBRL2 = (v) => {
+  if (v == null || isNaN(v)) return "—";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 };
 const fmtBRLCompact = (v) => {
   if (v == null || isNaN(v)) return "—";
@@ -970,6 +980,15 @@ const fmtBRLCompact = (v) => {
   return fmtBRL(v);
 };
 const fmtInt = (v) => (v == null || isNaN(v)) ? "—" : new Intl.NumberFormat("pt-BR").format(v);
+const fmtCNPJ = (v) => {
+  const d = String(v || "").replace(/\D/g, "");
+  if (d.length !== 14) return v || "—";
+  return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+};
+const ESFERA = { F: "Federal", E: "Estadual", M: "Municipal", D: "Distrital" };
+const PODER = { E: "Executivo", L: "Legislativo", J: "Judiciário", M: "Ministério Público", N: "Não se aplica" };
+const mapEsfera = (v) => v == null ? "—" : (ESFERA[String(v).toUpperCase()] || String(v));
+const mapPoder = (v) => v == null ? "—" : (PODER[String(v).toUpperCase()] || String(v));
 const fmtDate = (iso) => {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -1218,7 +1237,8 @@ function normalizeSearchItem(it) {
       ufSigla: it.uf || "",
       codigoIbge: it.municipio_id || ""
     },
-    linkSistemaOrigem: it.item_url ? ("https://pncp.gov.br" + it.item_url) : null
+    linkSistemaOrigem: null,
+    _itemUrl: it.item_url ? ("https://pncp.gov.br" + it.item_url) : null
   };
 }
 
@@ -1436,6 +1456,7 @@ function parseTerms(kw) { return (kw || "").split(",").map((s) => s.trim()).filt
 async function searchByKeyword(reset) {
   const terms = parseTerms(state.keyword);
   const useTerms = terms.length ? terms : (state.keyword ? [state.keyword] : []);
+  state.searchTermsCount = useTerms.length;
   let novos = [], total = 0, maxPag = 1;
   const dedupTerm = new Set();
   for (const t of useTerms) {
@@ -1540,9 +1561,14 @@ function renderResults() {
       '</button>'
     : '';
 
+  const multi = state.searchMode && state.searchTermsCount > 1;
+  const countLabel = multi
+    ? state.items.length + ' resultados únicos (' + state.searchTermsCount + ' termos)'
+    : state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '');
+
   root.innerHTML =
     '<div class="results-bar">' +
-      '<h3>' + titulo + ' <small>· ' + state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '') + '</small></h3>' +
+      '<h3>' + titulo + ' <small>· ' + countLabel + '</small></h3>' +
       '<div class="summary-chips">' +
         '<span class="chip">' + (state.searchMode ? 'Escopo: <b>' + escopo + '</b>' : 'Estimado: <b>' + fmtBRLCompact(somaEst) + '</b>') + '</span>' +
         (state.searchMode ? '' : '<span class="chip">Homologado: <b>' + fmtBRLCompact(somaHom) + '</b></span>') +
@@ -1703,7 +1729,8 @@ function renderModalBody(c, ref) {
   const unidade = c.unidadeOrgao || {};
   const orgao = c.orgaoEntidade || {};
   const tag = statusTag(c);
-  const pncpUrl = buildPncpUrl(c.numeroControlePNCP) || (ref ? "https://pncp.gov.br/app/editais/" + ref.cnpj + "/" + ref.ano + "/" + ref.seq : null);
+  const pncpUrl = buildPncpUrl(c.numeroControlePNCP) || safeUrl(c._itemUrl) || (ref ? "https://pncp.gov.br/app/editais/" + ref.cnpj + "/" + ref.ano + "/" + ref.seq : null);
+  const origemUrl = safeUrl(c.linkSistemaOrigem);
 
   const detailItems = [
     { k: "Nº de controle PNCP", v: c.numeroControlePNCP || "—", mono: true },
@@ -1740,6 +1767,16 @@ function renderModalBody(c, ref) {
       '<div class="detail-item gold"><div class="di-k">Valor total estimado</div><div class="di-v">' + fmtBRL(valEst) + '</div></div>' +
       '<div class="detail-item ' + (valHom > 0 ? "green" : "") + '"><div class="di-k">Valor total homologado</div><div class="di-v">' + (valHom > 0 ? fmtBRL(valHom) : "—") + '</div></div>' +
     '</div>' +
+    '<div class="section-title">Órgão / Ente responsável</div>' +
+    '<div class="detail-grid">' +
+      '<div class="detail-item full"><div class="di-k">Razão social do órgão</div><div class="di-v">' + esc(orgao.razaoSocial || "—") + '</div></div>' +
+      '<div class="detail-item"><div class="di-k">CNPJ</div><div class="di-v mono">' + esc(fmtCNPJ(orgao.cnpj)) + '</div></div>' +
+      '<div class="detail-item"><div class="di-k">Esfera / Poder</div><div class="di-v">' + esc(mapEsfera(orgao.esferaId)) + ' · ' + esc(mapPoder(orgao.poderId)) + '</div></div>' +
+      '<div class="detail-item full"><div class="di-k">Unidade administrativa</div><div class="di-v">' + esc(unidade.nomeUnidade || "—") + (unidade.codigoUnidade ? ' <span style="color:var(--muted);font-family:var(--font-mono);">(cód. ' + esc(unidade.codigoUnidade) + ')</span>' : '') + '</div></div>' +
+      '<div class="detail-item"><div class="di-k">Município</div><div class="di-v">' + esc(unidade.municipioNome || "—") + '</div></div>' +
+      '<div class="detail-item"><div class="di-k">UF</div><div class="di-v">' + esc(unidade.ufSigla || "—") + (unidade.ufNome ? ' — ' + esc(unidade.ufNome) : '') + '</div></div>' +
+      '<div class="detail-item"><div class="di-k">Código IBGE do município</div><div class="di-v mono">' + esc(unidade.codigoIbge || "—") + '</div></div>' +
+    '</div>' +
     '<div class="section-title">Dados da contratação</div>' +
     '<div class="detail-grid">' +
       detailItems.map((d) => '<div class="detail-item' + (d.full ? " full" : "") + '"><div class="di-k">' + esc(d.k) + '</div><div class="di-v' + (d.mono ? " mono" : "") + '">' + esc(d.v) + '</div></div>').join("") +
@@ -1758,7 +1795,7 @@ function renderModalBody(c, ref) {
     '<button class="btn-link" id="modalFavBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="' + (isFav(c) ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>' + (isFav(c) ? "Favoritado" : "Favoritar") + '</button>' +
     '<button class="btn-link primary" id="modalAnaliseBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>Analisar com IA</button>' +
     (pncpUrl ? '<a class="btn-link" href="' + esc(pncpUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>PNCP</a>' : '') +
-    (c.linkSistemaOrigem ? '<a class="btn-link" href="' + esc(c.linkSistemaOrigem) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Origem</a>' : '') +
+    (origemUrl ? '<a class="btn-link" href="' + esc(origemUrl) + '" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Origem</a>' : '') +
     '<button class="btn-link" id="modalCloseFoot">Fechar</button>';
   $("#modal").appendChild(foot);
 
@@ -1783,6 +1820,11 @@ function isEncerrada(c) {
   const s = SITUACAO[c.situacaoCompraId];
   return !!(s && s.terminal);
 }
+// Tenta buscar resultado em quase tudo, exceto o que está claramente em aberto.
+function maybeHasResult(c) {
+  if (c.situacaoCompraId === 1 && c.dataEncerramentoProposta && Date.now() < new Date(c.dataEncerramentoProposta).getTime()) return false;
+  return true;
+}
 
 async function loadModalItems(ref, c) {
   const wrap = $("#itemsWrap");
@@ -1797,8 +1839,8 @@ async function loadModalItems(ref, c) {
         '<tr><td class="num">' + (it.numeroItem || (i + 1)) + '</td>' +
         '<td>' + esc(it.descricao || it.materialOuServicoNome || "—") + '</td>' +
         '<td class="num">' + fmtInt(it.quantidade) + (it.unidadeMedida ? " " + esc(it.unidadeMedida) : "") + '</td>' +
-        '<td class="num">' + fmtBRL(it.valorUnitarioEstimado) + '</td>' +
-        '<td class="num">' + fmtBRL(it.valorTotal != null ? it.valorTotal : (Number(it.valorUnitarioEstimado) * Number(it.quantidade))) + '</td></tr>'
+        '<td class="num">' + fmtBRL2(it.valorUnitarioEstimado) + '</td>' +
+        '<td class="num">' + fmtBRL2(it.valorTotal != null ? it.valorTotal : (Number(it.valorUnitarioEstimado) * Number(it.quantidade))) + '</td></tr>'
       ).join("");
       wrap.innerHTML =
         '<table class="items-table"><thead><tr><th>#</th><th>Descrição</th><th style="text-align:right;">Qtd.</th><th style="text-align:right;">Vlr. unit.</th><th style="text-align:right;">Total</th></tr></thead><tbody>' + rows + '</tbody></table>';
@@ -1806,18 +1848,19 @@ async function loadModalItems(ref, c) {
   } catch (e) {
     wrap.innerHTML = '<div class="items-mini-load">Itens indisponíveis no momento.</div>';
   }
-  // Resultado / vencedores — só para licitações encerradas/homologadas.
-  if (c && isEncerrada(c) && itens && itens.length) loadModalResultados(ref, itens);
+  // Resultado / vencedores — tenta em tudo que não esteja claramente em aberto.
+  if (c && itens && itens.length && maybeHasResult(c)) loadModalResultados(ref, itens, c);
 }
 
-async function loadModalResultados(ref, itens) {
+async function loadModalResultados(ref, itens, c) {
   const sec = $("#resultSection");
   if (!sec) return;
   sec.innerHTML = '<div class="section-title">Resultado · vencedores</div><div class="items-wrap"><div class="items-mini-load"><div class="spinner" style="width:24px;height:24px;"></div><div style="margin-top:10px;">Buscando resultado dos itens…</div></div></div>';
-  const alvo = itens.slice(0, 25);
-  const settled = await Promise.allSettled(alvo.map((it) =>
-    pncpService.resultadosItem(ref.cnpj, ref.ano, ref.seq, it.numeroItem).then((r) => ({ it, r }))
-  ));
+  const alvo = itens.slice(0, 12);
+  const settled = await Promise.allSettled(alvo.map((it, i) => {
+    const numItem = it.numeroItem || (i + 1);
+    return pncpService.resultadosItem(ref.cnpj, ref.ano, ref.seq, numItem).then((r) => ({ it, numItem, r }));
+  }));
   const linhas = [];
   let totalHom = 0;
   settled.forEach((s) => {
@@ -1825,29 +1868,31 @@ async function loadModalResultados(ref, itens) {
     const it = s.value.it;
     const resultados = s.value.r || [];
     if (!resultados.length) return;
-    const venc = resultados.find((x) => /informado|homolog|venced|classific/i.test(x.situacaoCompraItemResultadoNome || "")) || resultados[0];
-    const fornecedor = venc.nomeRazaoSocialFornecedor || venc.razaoSocialFornecedor || venc.nomeFornecedor || "—";
-    const ni = venc.niFornecedor || venc.cnpjCpfFornecedor || "";
-    const vUnit = venc.valorUnitarioHomologado != null ? venc.valorUnitarioHomologado : venc.valorUnitario;
-    const vTot = venc.valorTotalHomologado != null ? venc.valorTotalHomologado : (Number(vUnit) * Number(venc.quantidadeHomologada || it.quantidade || 0));
+    const venc = resultados.find((x) => /informado|homolog|venced|classific|adjudic/i.test(x.situacaoCompraItemResultadoNome || x.situacao || "")) || resultados[0];
+    const fornecedor = venc.nomeRazaoSocialFornecedor || venc.razaoSocialFornecedor || venc.nomeFornecedor || venc.nome || "—";
+    const ni = venc.niFornecedor || venc.cnpjCpfFornecedor || venc.cnpjFornecedor || "";
+    const vUnit = venc.valorUnitarioHomologado != null ? venc.valorUnitarioHomologado : (venc.valorUnitario != null ? venc.valorUnitario : null);
+    const qtd = venc.quantidadeHomologada != null ? venc.quantidadeHomologada : it.quantidade;
+    const vTot = venc.valorTotalHomologado != null ? venc.valorTotalHomologado : (vUnit != null && qtd != null ? Number(vUnit) * Number(qtd) : null);
     if (vTot) totalHom += Number(vTot) || 0;
+    const niFmt = ni && String(ni).replace(/\D/g, "").length === 14 ? fmtCNPJ(ni) : ni;
     linhas.push(
-      '<tr><td class="num">' + (it.numeroItem || "—") + '</td>' +
+      '<tr><td class="num">' + (s.value.numItem || "—") + '</td>' +
       '<td>' + esc((it.descricao || it.materialOuServicoNome || "—")) + '</td>' +
-      '<td><b>' + esc(fornecedor) + '</b>' + (ni ? '<br><span style="color:var(--muted);font-family:var(--font-mono);font-size:0.78rem;">' + esc(ni) + '</span>' : '') + '</td>' +
-      '<td class="num">' + fmtBRL(vUnit) + '</td>' +
-      '<td class="num" style="color:var(--green);">' + fmtBRL(vTot) + '</td></tr>'
+      '<td><b>' + esc(fornecedor) + '</b>' + (ni ? '<br><span style="color:var(--muted);font-family:var(--font-mono);font-size:0.78rem;">' + esc(niFmt) + '</span>' : '') + '</td>' +
+      '<td class="num">' + fmtBRL2(vUnit) + '</td>' +
+      '<td class="num" style="color:var(--green);">' + fmtBRL2(vTot) + '</td></tr>'
     );
   });
   if (!linhas.length) {
-    sec.innerHTML = '<div class="section-title">Resultado · vencedores</div><div class="items-wrap"><div class="items-mini-load">Resultado ainda não publicado para os itens (ou licitação sem adjudicação registrada no PNCP).</div></div>';
+    sec.innerHTML = '<div class="section-title">Resultado · vencedores</div><div class="items-wrap"><div class="items-mini-load">Resultado dos itens ainda não publicado no PNCP' + (c && isEncerrada(c) ? '' : ' (ou licitação em andamento)') + '.</div></div>';
     return;
   }
   sec.innerHTML =
     '<div class="section-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>Resultado · vencedores</div>' +
     '<div class="items-wrap"><table class="items-table"><thead><tr><th>#</th><th>Item</th><th>Fornecedor vencedor</th><th style="text-align:right;">Vlr. unit. homol.</th><th style="text-align:right;">Total homol.</th></tr></thead><tbody>' +
     linhas.join("") +
-    (totalHom > 0 ? '<tr><td colspan="4" style="text-align:right;font-weight:600;color:var(--text);">Total homologado</td><td class="num" style="color:var(--green);font-weight:700;">' + fmtBRL(totalHom) + '</td></tr>' : '') +
+    (totalHom > 0 ? '<tr><td colspan="4" style="text-align:right;font-weight:600;color:var(--text);">Total homologado</td><td class="num" style="color:var(--green);font-weight:700;">' + fmtBRL2(totalHom) + '</td></tr>' : '') +
     '</tbody></table></div>';
 }
 
