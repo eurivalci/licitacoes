@@ -214,6 +214,30 @@
   .an-pill.baixa { background: rgba(52,211,153,0.16); color: var(--green); }
   .an-disclaimer { margin-top: 20px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
 
+  /* report builder */
+  .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 11px; overflow: hidden; }
+  .seg button { padding: 10px 16px; font-size: 0.86rem; font-weight: 600; color: var(--text-dim); transition: 0.14s; }
+  .seg button.on { background: var(--accent); color: #042; }
+  .rep-opts { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin: 8px 0 4px; }
+  .rep-opts label { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--text-dim); cursor: pointer; }
+  .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 7px 16px; }
+  .fgrp-title { grid-column: 1/-1; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-top: 10px; }
+  .fchk { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; cursor: pointer; padding: 5px 0; color: var(--text-dim); }
+  .fchk input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .fchk:hover { color: var(--text); }
+  .progress { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 10px; }
+  .progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0; transition: width 0.2s; }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .stat { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; background: var(--surface); }
+  .stat .s-k { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .stat .s-v { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; margin-top: 5px; color: var(--text); }
+  .stat.hl .s-v { color: var(--gold); }
+  .preview-scroll { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .preview-scroll table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .preview-scroll th { position: sticky; top: 0; background: var(--bg-2); color: var(--muted); text-align: left; padding: 9px 11px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  .preview-scroll td { padding: 8px 11px; border-top: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+  .preview-scroll td.n { font-family: var(--font-mono); text-align: right; color: var(--text); }
+
   /* alerts drawer reuse drawer styles; specific bits */
   .alert-item {
     border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px;
@@ -812,6 +836,11 @@
 <!-- ===================== ANALYSIS OVERLAY ===================== -->
 <div class="modal-overlay" id="analiseOverlay" role="dialog" aria-modal="true">
   <div class="modal" id="analiseModal" style="max-width:860px;"></div>
+</div>
+
+<!-- ===================== REPORT OVERLAY ===================== -->
+<div class="modal-overlay" id="reportOverlay" role="dialog" aria-modal="true">
+  <div class="modal" id="reportModal" style="max-width:920px;"></div>
 </div>
 
 <!-- ===================== FOOTER ===================== -->
@@ -1574,6 +1603,7 @@ function renderResults() {
         (state.searchMode ? '' : '<span class="chip">Homologado: <b>' + fmtBRLCompact(somaHom) + '</b></span>') +
         '<span class="chip">' + (state.searchMode ? 'Busca por <b>objeto</b>' : 'Período: <b>' + state.periodo + 'd</b>') + '</span>' +
         saveBtn +
+        '<button class="btn-save-alert" id="btnReport" style="border-color:var(--accent-2);color:var(--accent-2);background:rgba(56,189,248,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> Gerar relatório</button>' +
       '</div>' +
     '</div>' +
     '<div class="card-grid" id="cardGrid"></div>' +
@@ -1584,6 +1614,8 @@ function renderResults() {
 
   const sb = $("#btnSaveAlert");
   if (sb && !alreadySaved) sb.onclick = addAlertFromCurrent;
+  const rb = $("#btnReport");
+  if (rb) rb.onclick = openReport;
 
   if (state.pagina < state.totalPaginas) {
     const btn = el("button", { class: "btn-ghost" }, "Carregar mais (página " + (state.pagina + 1) + " de " + state.totalPaginas + ")");
@@ -2295,6 +2327,341 @@ function closeAnalise() {
   if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
 }
 
+/* ============================== 6e. RELATÓRIO / EXPORTAÇÃO ============================== */
+const REPORT_MAX_CONTRAT = 80;
+const REPORT_MAX_ITEMS = 40;
+const reportState = { granularity: "item", onlyWinner: true, gathered: null };
+
+// Campos disponíveis. item=só granularidade por item; agg=só granularidade por licitação; money=moeda; num=numérico; def=marcado por padrão.
+const REPORT_FIELDS = [
+  { id: "palavraChave", label: "Palavra-chave", grp: "Contexto", def: true },
+  { id: "numeroControle", label: "Nº controle PNCP", grp: "Contratação", def: true },
+  { id: "objeto", label: "Objeto", grp: "Contratação", def: true },
+  { id: "modalidade", label: "Modalidade", grp: "Contratação" },
+  { id: "situacao", label: "Situação", grp: "Contratação" },
+  { id: "dataPublicacao", label: "Data publicação", grp: "Contratação" },
+  { id: "dataEncerramento", label: "Data encerramento", grp: "Contratação", def: true },
+  { id: "orgao", label: "Órgão", grp: "Ente", def: true },
+  { id: "cnpjOrgao", label: "CNPJ do órgão", grp: "Ente" },
+  { id: "municipio", label: "Município", grp: "Ente", def: true },
+  { id: "uf", label: "UF", grp: "Ente", def: true },
+  { id: "numeroItem", label: "Nº item", grp: "Item", item: true, num: true, def: true },
+  { id: "descricaoItem", label: "Descrição do item", grp: "Item", item: true, def: true },
+  { id: "unidadeMedida", label: "Unidade", grp: "Item", item: true, def: true },
+  { id: "quantidade", label: "Quantidade", grp: "Item", item: true, num: true, def: true },
+  { id: "valorUnitEstimado", label: "Vlr. unit. estimado", grp: "Item", item: true, num: true, money: true, def: true },
+  { id: "valorTotalEstimado", label: "Vlr. total estimado (item)", grp: "Item", item: true, num: true, money: true },
+  { id: "fornecedorVencedor", label: "Fornecedor vencedor", grp: "Vencedor", item: true, def: true },
+  { id: "cnpjVencedor", label: "CNPJ/CPF vencedor", grp: "Vencedor", item: true, def: true },
+  { id: "valorUnitHomologado", label: "Vlr. unit. homologado", grp: "Vencedor", item: true, num: true, money: true, def: true },
+  { id: "valorTotalHomologado", label: "Vlr. total homologado", grp: "Vencedor", item: true, num: true, money: true, def: true },
+  { id: "itensCount", label: "Qtde. de itens", grp: "Agregado", agg: true, num: true, def: true },
+  { id: "itensComVencedor", label: "Itens com vencedor", grp: "Agregado", agg: true, num: true, def: true },
+  { id: "valorTotalEstimadoLic", label: "Total estimado (licitação)", grp: "Agregado", agg: true, num: true, money: true, def: true },
+  { id: "valorTotalHomologadoLic", label: "Total homologado (licitação)", grp: "Agregado", agg: true, num: true, money: true, def: true }
+];
+
+function pickWinner(resultados) {
+  if (!resultados || !resultados.length) return null;
+  const v = resultados.find((x) => /informado|homolog|venced|classific|adjudic/i.test(x.situacaoCompraItemResultadoNome || x.situacao || "")) || resultados[0];
+  const ni = v.niFornecedor || v.cnpjCpfFornecedor || v.cnpjFornecedor || "";
+  const vUnit = v.valorUnitarioHomologado != null ? v.valorUnitarioHomologado : (v.valorUnitario != null ? v.valorUnitario : null);
+  const qtd = v.quantidadeHomologada != null ? v.quantidadeHomologada : null;
+  const vTot = v.valorTotalHomologado != null ? v.valorTotalHomologado : (vUnit != null && qtd != null ? Number(vUnit) * Number(qtd) : null);
+  return { fornecedor: v.nomeRazaoSocialFornecedor || v.razaoSocialFornecedor || v.nomeFornecedor || v.nome || "", ni: ni, vUnit: vUnit, vTot: vTot };
+}
+
+async function pLimit(items, limit, fn, onProgress) {
+  const out = new Array(items.length);
+  let idx = 0, done = 0;
+  async function worker() {
+    while (idx < items.length) {
+      const cur = idx++;
+      try { out[cur] = await fn(items[cur], cur); } catch (e) { out[cur] = null; }
+      done++; if (onProgress) onProgress(done, items.length);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+
+function openReport() {
+  if (!state.items.length) { toast("Faça uma busca primeiro."); return; }
+  reportState.gathered = null;
+  const scopeTerms = state.searchMode ? (parseTerms(state.keyword).join(" + ") || state.keyword) : (state.munNome + "/" + state.uf);
+  const n = Math.min(state.items.length, REPORT_MAX_CONTRAT);
+  $("#reportModal").innerHTML =
+    '<div class="modal-head"><button class="modal-close" id="repClose" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '<div class="mh-badges"><span class="badge b-mode">Relatório &amp; exportação</span></div>' +
+      '<h3>Gerar relatório de resultados</h3>' +
+      '<div class="mh-org">Escopo: <b style="color:var(--text);margin-left:5px;">' + esc(scopeTerms) + '</b> · ' + n + ' licitações carregadas</div>' +
+    '</div>' +
+    '<div class="modal-body">' +
+      '<div class="an-block" style="margin-top:0;"><div class="anb-title">1 · Granularidade</div>' +
+        '<div class="seg" id="repSeg"><button data-g="item" class="on">Por item / vencedor</button><button data-g="lic">Por licitação</button></div>' +
+        '<div class="rep-opts"><label><input type="checkbox" id="repOnlyWinner" checked /> Somente itens com vencedor (encerrados/homologados)</label></div>' +
+      '</div>' +
+      '<div class="an-block"><div class="anb-title">2 · Campos do relatório</div><div class="field-grid" id="repFields"></div></div>' +
+      '<button class="btn-primary" id="repGenerate" style="grid-column:unset;width:100%;margin-top:14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg> Gerar relatório</button>' +
+      '<div id="repResult"></div>' +
+    '</div>';
+  $("#reportOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  renderReportFields();
+  $("#repClose").onclick = closeReport;
+  $$("#repSeg button").forEach((b) => b.onclick = () => {
+    reportState.granularity = b.dataset.g;
+    $$("#repSeg button").forEach((x) => x.classList.toggle("on", x === b));
+    renderReportFields();
+    if (reportState.gathered) renderReportOutput();
+  });
+  $("#repOnlyWinner").onchange = () => { reportState.onlyWinner = $("#repOnlyWinner").checked; if (reportState.gathered) renderReportOutput(); };
+  $("#repGenerate").onclick = runReportGather;
+}
+
+function visibleFields() {
+  return REPORT_FIELDS.filter((f) => reportState.granularity === "item" ? !f.agg : !f.item);
+}
+function renderReportFields() {
+  const wrap = $("#repFields");
+  const prev = {};
+  $$("#repFields input").forEach((i) => prev[i.dataset.id] = i.checked);
+  const fields = visibleFields();
+  const groups = {};
+  fields.forEach((f) => { (groups[f.grp] = groups[f.grp] || []).push(f); });
+  let html = "";
+  Object.keys(groups).forEach((g) => {
+    html += '<div class="fgrp-title">' + esc(g) + '</div>';
+    groups[g].forEach((f) => {
+      const checked = (f.id in prev) ? prev[f.id] : f.def;
+      html += '<label class="fchk"><input type="checkbox" data-id="' + f.id + '"' + (checked ? " checked" : "") + ' />' + esc(f.label) + '</label>';
+    });
+  });
+  wrap.innerHTML = html;
+  $$("#repFields input").forEach((i) => i.onchange = () => { if (reportState.gathered) renderReportOutput(); });
+}
+function selectedFields() {
+  const ids = new Set($$("#repFields input").filter((i) => i.checked).map((i) => i.dataset.id));
+  return visibleFields().filter((f) => ids.has(f.id));
+}
+
+async function runReportGather() {
+  const btn = $("#repGenerate");
+  btn.disabled = true;
+  const list = state.items.slice(0, REPORT_MAX_CONTRAT);
+  $("#repResult").innerHTML =
+    '<div class="an-block"><div class="anb-title">Coletando dados no PNCP</div>' +
+    '<div style="font-size:0.85rem;color:var(--text-dim);" id="repProgTxt">Processando 0 de ' + list.length + ' licitações…</div>' +
+    '<div class="progress"><i id="repProgBar"></i></div></div>';
+  try {
+    const gathered = await gatherReportData(list, (done, total) => {
+      $("#repProgTxt").textContent = "Processando " + done + " de " + total + " licitações…";
+      $("#repProgBar").style.width = (done / total * 100) + "%";
+    });
+    reportState.gathered = gathered;
+    renderReportOutput();
+  } catch (e) {
+    $("#repResult").innerHTML = '<div class="state-box" style="padding:32px;"><h4>Falha ao coletar</h4><p>' + esc(e && e.message ? e.message : "erro") + '. Verifique o proxy em ⚙.</p></div>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function gatherReportData(list, onProgress) {
+  const terms = state.searchMode ? (parseTerms(state.keyword).join(" + ") || state.keyword) : (state.munNome + "/" + state.uf);
+  const gathered = await pLimit(list, 4, async (c) => {
+    const ref = getRef(c);
+    if (!ref) return { c: c, terms: terms, itens: [] };
+    let itens = [];
+    try { itens = (await pncpService.itens(c.numeroControlePNCP)) || []; } catch (e) { itens = []; }
+    itens = itens.slice(0, REPORT_MAX_ITEMS);
+    const withVenc = await Promise.all(itens.map(async (item, i) => {
+      let venc = null;
+      try { venc = pickWinner(await pncpService.resultadosItem(ref.cnpj, ref.ano, ref.seq, item.numeroItem || (i + 1))); } catch (e) {}
+      return { item: item, venc: venc };
+    }));
+    return { c: c, terms: terms, itens: withVenc };
+  }, onProgress);
+  return gathered.filter(Boolean);
+}
+
+function aggOf(g) {
+  let est = 0, hom = 0, comV = 0;
+  g.itens.forEach(({ item, venc }) => {
+    const e = item.valorTotal != null ? Number(item.valorTotal) : (Number(item.valorUnitarioEstimado) * Number(item.quantidade) || 0);
+    if (isFinite(e)) est += e;
+    if (venc && venc.vTot != null && isFinite(venc.vTot)) { hom += Number(venc.vTot); comV++; }
+  });
+  return { itensCount: g.itens.length, itensComVencedor: comV, totalEst: est, totalHom: hom };
+}
+
+function cellRaw(id, ctx) {
+  const c = ctx.c, item = ctx.item, venc = ctx.venc, u = c.unidadeOrgao || {}, o = c.orgaoEntidade || {};
+  switch (id) {
+    case "palavraChave": return ctx.terms;
+    case "numeroControle": return c.numeroControlePNCP || "";
+    case "objeto": return c.objetoCompra || "";
+    case "modalidade": return c.modalidadeNome || "";
+    case "situacao": return c.situacaoCompraNome || (statusTag(c).nome) || "";
+    case "dataPublicacao": return fmtDate(c.dataPublicacaoPncp);
+    case "dataEncerramento": return fmtDate(c.dataEncerramentoProposta);
+    case "orgao": return o.razaoSocial || u.nomeUnidade || "";
+    case "cnpjOrgao": return o.cnpj ? fmtCNPJ(o.cnpj) : "";
+    case "municipio": return u.municipioNome || "";
+    case "uf": return u.ufSigla || "";
+    case "numeroItem": return item ? (item.numeroItem != null ? Number(item.numeroItem) : null) : null;
+    case "descricaoItem": return item ? (item.descricao || item.materialOuServicoNome || "") : "";
+    case "unidadeMedida": return item ? (item.unidadeMedida || "") : "";
+    case "quantidade": return item && item.quantidade != null ? Number(item.quantidade) : null;
+    case "valorUnitEstimado": return item && item.valorUnitarioEstimado != null ? Number(item.valorUnitarioEstimado) : null;
+    case "valorTotalEstimado": {
+      if (!item) return null;
+      const t = item.valorTotal != null ? item.valorTotal : (Number(item.valorUnitarioEstimado) * Number(item.quantidade));
+      return isFinite(t) ? Number(t) : null;
+    }
+    case "fornecedorVencedor": return venc ? venc.fornecedor : "";
+    case "cnpjVencedor": { const ni = venc ? venc.ni : ""; return ni && String(ni).replace(/\D/g, "").length === 14 ? fmtCNPJ(ni) : (ni || ""); }
+    case "valorUnitHomologado": return venc && venc.vUnit != null ? Number(venc.vUnit) : null;
+    case "valorTotalHomologado": return venc && venc.vTot != null ? Number(venc.vTot) : null;
+    case "itensCount": return ctx.agg.itensCount;
+    case "itensComVencedor": return ctx.agg.itensComVencedor;
+    case "valorTotalEstimadoLic": return ctx.agg.totalEst || null;
+    case "valorTotalHomologadoLic": return ctx.agg.totalHom || null;
+    default: return "";
+  }
+}
+
+function buildReportRows(fields) {
+  const rows = [];
+  reportState.gathered.forEach((g) => {
+    if (reportState.granularity === "item") {
+      g.itens.forEach(({ item, venc }) => {
+        if (reportState.onlyWinner && !(venc && venc.vUnit != null)) return;
+        const ctx = { c: g.c, terms: g.terms, item: item, venc: venc };
+        const row = {}; fields.forEach((f) => row[f.id] = cellRaw(f.id, ctx)); rows.push(row);
+      });
+    } else {
+      const agg = aggOf(g);
+      if (reportState.onlyWinner && agg.itensComVencedor === 0) return;
+      const ctx = { c: g.c, terms: g.terms, agg: agg };
+      const row = {}; fields.forEach((f) => row[f.id] = cellRaw(f.id, ctx)); rows.push(row);
+    }
+  });
+  return rows;
+}
+
+function priceStats() {
+  const prices = [];
+  reportState.gathered.forEach((g) => g.itens.forEach(({ venc }) => { if (venc && venc.vUnit != null && isFinite(venc.vUnit)) prices.push(Number(venc.vUnit)); }));
+  if (!prices.length) return null;
+  prices.sort((a, b) => a - b);
+  const sum = prices.reduce((s, v) => s + v, 0);
+  const mid = Math.floor(prices.length / 2);
+  const mediana = prices.length % 2 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
+  let hom = 0; reportState.gathered.forEach((g) => g.itens.forEach(({ venc }) => { if (venc && venc.vTot != null) hom += Number(venc.vTot) || 0; }));
+  return { count: prices.length, media: sum / prices.length, mediana: mediana, min: prices[0], max: prices[prices.length - 1], totalHom: hom };
+}
+
+function renderReportOutput() {
+  const fields = selectedFields();
+  const rows = buildReportRows(fields);
+  const st = priceStats();
+  let html = '<div class="an-block"><div class="anb-title">Estatísticas de preço (vlr. unit. homologado dos vencedores)</div>';
+  if (st) {
+    html += '<div class="stat-cards">' +
+      '<div class="stat"><div class="s-k">Itens c/ vencedor</div><div class="s-v">' + fmtInt(st.count) + '</div></div>' +
+      '<div class="stat hl"><div class="s-k">Preço médio</div><div class="s-v">' + fmtBRL2(st.media) + '</div></div>' +
+      '<div class="stat"><div class="s-k">Mediana</div><div class="s-v">' + fmtBRL2(st.mediana) + '</div></div>' +
+      '<div class="stat"><div class="s-k">Mínimo</div><div class="s-v">' + fmtBRL2(st.min) + '</div></div>' +
+      '<div class="stat"><div class="s-k">Máximo</div><div class="s-v">' + fmtBRL2(st.max) + '</div></div>' +
+      '<div class="stat"><div class="s-k">Total homologado</div><div class="s-v">' + fmtBRLCompact(st.totalHom) + '</div></div>' +
+    '</div>';
+  } else {
+    html += '<div class="items-mini-load">Nenhum item com vencedor encontrado no conjunto coletado. Tente sem o filtro de vencedor, ou busque por termos com licitações encerradas.</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="an-block"><div class="anb-title">Prévia (' + rows.length + ' linhas · ' + fields.length + ' colunas)</div>';
+  if (!rows.length) html += '<div class="items-mini-load">Sem linhas para os critérios atuais.</div>';
+  else {
+    html += '<div class="preview-scroll"><table><thead><tr>' + fields.map((f) => '<th>' + esc(f.label) + '</th>').join("") + '</tr></thead><tbody>' +
+      rows.slice(0, 60).map((r) => '<tr>' + fields.map((f) => '<td class="' + (f.num ? "n" : "") + '">' + esc(fmtCell(r[f.id], f)) + '</td>').join("") + '</tr>').join("") +
+      '</tbody></table></div>' + (rows.length > 60 ? '<div style="font-size:0.78rem;color:var(--muted);margin-top:8px;">Mostrando 60 de ' + rows.length + ' linhas. A exportação inclui todas.</div>' : '');
+  }
+  html += '</div>';
+
+  html += '<div class="modal-foot" style="padding:18px 0 0;border:none;">' +
+    '<button class="btn-link primary" id="repCSV"' + (rows.length ? '' : ' disabled') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar CSV</button>' +
+    '<button class="btn-link" id="repXLSX"' + (rows.length ? '' : ' disabled') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg> Exportar XLSX</button>' +
+  '</div>';
+  $("#repResult").innerHTML = html;
+  if (rows.length) {
+    $("#repCSV").onclick = () => exportCSV(rows, fields);
+    $("#repXLSX").onclick = () => exportXLSX(rows, fields);
+  }
+}
+
+function fmtCell(v, f) {
+  if (v == null || v === "") return "";
+  if (f.num && typeof v === "number" && isFinite(v)) return f.money ? fmtBRL2(v) : v.toLocaleString("pt-BR", { useGrouping: false, maximumFractionDigits: 4 });
+  return String(v);
+}
+function reportFilename(ext) {
+  const base = (state.searchMode ? (parseTerms(state.keyword)[0] || "busca") : state.munNome || "municipio").toString().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const d = new Date().toISOString().slice(0, 10);
+  return "relatorio-pncp-" + base + "-" + d + "." + ext;
+}
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type: type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function csvCell(s) { s = String(s == null ? "" : s); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function exportCSV(rows, fields) {
+  const lines = [fields.map((f) => csvCell(f.label)).join(";")];
+  rows.forEach((r) => lines.push(fields.map((f) => {
+    const v = r[f.id];
+    if (f.num && typeof v === "number" && isFinite(v)) return csvCell(v.toLocaleString("pt-BR", { useGrouping: false, minimumFractionDigits: f.money ? 2 : 0, maximumFractionDigits: f.money ? 2 : 4 }));
+    return csvCell(v == null ? "" : v);
+  }).join(";")));
+  downloadBlob("\ufeff" + lines.join("\r\n"), reportFilename("csv"), "text/csv;charset=utf-8");
+  toast("✓ CSV exportado (" + rows.length + " linhas).");
+}
+function loadSheetJS() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (loadSheetJS._p) return loadSheetJS._p;
+  loadSheetJS._p = new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => res(window.XLSX);
+    s.onerror = () => rej(new Error("CDN indisponível"));
+    document.head.appendChild(s);
+  });
+  return loadSheetJS._p;
+}
+async function exportXLSX(rows, fields) {
+  try {
+    const XLSX = await loadSheetJS();
+    const aoa = [fields.map((f) => f.label)];
+    rows.forEach((r) => aoa.push(fields.map((f) => (r[f.id] == null ? "" : r[f.id]))));
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = fields.map((f) => ({ wch: Math.min(40, Math.max(10, f.label.length + 2)) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
+    XLSX.writeFile(wb, reportFilename("xlsx"));
+    toast("✓ XLSX exportado (" + rows.length + " linhas).");
+  } catch (e) {
+    toast("Sem internet p/ o gerador XLSX — exportando CSV.");
+    exportCSV(rows, fields);
+  }
+}
+function closeReport() {
+  $("#reportOverlay").classList.remove("open");
+  if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
+}
+
 /* ============================== 7. CONTROLLER ============================== */
 function init() {
   populateModalidades();
@@ -2330,9 +2697,10 @@ function init() {
   $("#closeFavs").addEventListener("click", closeFavs);
   $("#favsOverlay").addEventListener("click", closeFavs);
   $("#analiseOverlay").addEventListener("click", (e) => { if (e.target.id === "analiseOverlay") closeAnalise(); });
+  $("#reportOverlay").addEventListener("click", (e) => { if (e.target.id === "reportOverlay") closeReport(); });
 
   $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); hideMunPop(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); hideMunPop(); } });
 
   if (state.proxyBase) updateSrcPill("warn");
 }
