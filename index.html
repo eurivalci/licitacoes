@@ -712,19 +712,19 @@
       </div>
       <div class="kpi loading">
         <div class="kpi-top">
-          <span class="kpi-tag">Editais no PNCP</span>
-          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></span>
+          <span class="kpi-tag">UFs monitoradas</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
         </div>
         <div class="kpi-val"><span class="skeleton" id="kpiPubSk"></span><span id="kpiPub" hidden>—</span></div>
-        <div class="kpi-sub">total indexado na base nacional</div>
+        <div class="kpi-sub">estados + Distrito Federal</div>
       </div>
       <div class="kpi loading">
         <div class="kpi-top">
-          <span class="kpi-tag">Encerradas</span>
-          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          <span class="kpi-tag">Modalidades cobertas</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></span>
         </div>
         <div class="kpi-val"><span class="skeleton" id="kpiValSk"></span><span id="kpiVal" hidden>—</span></div>
-        <div class="kpi-sub">licitações já encerradas/julgadas</div>
+        <div class="kpi-sub">tipos de contratação (Lei 14.133)</div>
       </div>
     </div>
     <p class="kpi-hint" id="kpiHint" hidden></p>
@@ -1423,9 +1423,12 @@ async function loadHero() {
     estados = await ibgeService.estados();
     populateUF(estados);
     renderRegions(estados);
-    $("#kpiMunSub").textContent = "municípios · " + estados.length + " UFs monitoradas";
+    $("#kpiMunSub").textContent = "cidades cobertas no Brasil";
+    setKpi("kpiPub", "kpiPubSk", estados.length, fmtInt);
+    setKpi("kpiVal", "kpiValSk", MODALIDADES.length - 1, fmtInt);
   } catch (e) {
     $("#ufSel").innerHTML = '<option value="">Erro ao carregar UFs</option>';
+    failKpi("kpiPub", "kpiPubSk"); failKpi("kpiVal", "kpiValSk");
     toast("Não foi possível carregar a lista de estados do IBGE.");
   }
 
@@ -1434,32 +1437,19 @@ async function loadHero() {
 }
 
 async function loadKpiPNCP() {
-  let anyFail = false;
-  // recebendo propostas agora (nacional) via /search
+  // Único indicador dinâmico: licitações recebendo propostas AGORA (cada edital = 1 licitação, contagem única).
   try {
     const r = await pncpService.searchEditais({ q: "", status: "recebendo_proposta", pagina: 1 });
     setKpi("kpiAbertas", "kpiAbertasSk", r.total || 0, fmtInt);
-  } catch (e) { failKpi("kpiAbertas", "kpiAbertasSk"); anyFail = true; }
-  // total de editais indexados no PNCP
-  try {
-    const r = await pncpService.searchEditais({ q: "", status: "", pagina: 1 });
-    setKpi("kpiPub", "kpiPubSk", r.total || 0, fmtInt);
-  } catch (e) { failKpi("kpiPub", "kpiPubSk"); anyFail = true; }
-  // encerradas
-  try {
-    const r = await pncpService.searchEditais({ q: "", status: "encerradas", pagina: 1 });
-    setKpi("kpiVal", "kpiValSk", r.total || 0, fmtInt);
-  } catch (e) { failKpi("kpiVal", "kpiValSk"); anyFail = true; }
-
-  const hint = $("#kpiHint");
-  if (anyFail) {
+    $("#kpiHint").hidden = true;
+  } catch (e) {
+    failKpi("kpiAbertas", "kpiAbertasSk");
     updateSrcPill("err");
+    const hint = $("#kpiHint");
     hint.hidden = false;
     hint.innerHTML = state.proxyBase
-      ? 'Indicadores nacionais indisponíveis no momento — verifique o proxy do PNCP em ⚙ (a busca por município via IBGE não depende dele).'
-      : 'Os indicadores nacionais precisam do proxy do PNCP. Configure em ⚙ (a contagem de municípios vem do IBGE e não depende de proxy).';
-  } else {
-    hint.hidden = true;
+      ? 'Indicador de propostas abertas indisponível no momento — verifique o proxy do PNCP em ⚙.'
+      : 'O indicador de propostas abertas precisa do proxy do PNCP (⚙). Os demais números vêm do IBGE e da base de modalidades.';
   }
 }
 function setKpi(id, skId, val, fmt) {
