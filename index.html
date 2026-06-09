@@ -341,6 +341,38 @@
   .rc-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
   .rc-bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); }
 
+  .kpi-hint { margin-top: 16px; font-size: 0.82rem; color: var(--amber); display: flex; gap: 8px; align-items: center; padding: 11px 14px; border: 1px solid rgba(251,155,58,0.3); background: rgba(251,155,58,0.08); border-radius: var(--radius-sm); }
+
+  /* glossary term */
+  .gloss {
+    border-bottom: 1.5px dashed var(--accent); cursor: help; transition: 0.14s;
+    text-decoration: none; color: var(--accent); font-weight: 500;
+  }
+  .gloss:hover { border-bottom-color: var(--accent-2); background: var(--accent-soft); border-radius: 3px; }
+  .gloss-overlay {
+    position: fixed; inset: 0; z-index: 210; display: none; background: rgba(4,6,11,0.7); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .gloss-overlay.open { display: flex; animation: fade 0.18s ease; }
+  .gloss-modal {
+    width: 100%; max-width: 520px; background: linear-gradient(180deg, #0e1424, var(--bg-2));
+    border: 1px solid var(--border-strong); border-radius: 20px; box-shadow: var(--shadow);
+    overflow: hidden; animation: pop 0.26s cubic-bezier(0.22,1,0.36,1);
+  }
+  .gloss-modal .gm-head { padding: 22px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
+  .gloss-modal .gm-ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex-shrink: 0; }
+  .gloss-modal .gm-head h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; flex: 1; text-transform: capitalize; }
+  .gloss-modal .gm-close { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); flex-shrink: 0; }
+  .gloss-modal .gm-close:hover { background: var(--red); color: #fff; }
+  .gloss-modal .gm-body { padding: 20px 24px 24px; }
+  .gloss-block { margin-bottom: 18px; }
+  .gloss-block:last-child { margin-bottom: 0; }
+  .gloss-block .gb-tag { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 11px; border-radius: 999px; margin-bottom: 9px; }
+  .gloss-block.simple .gb-tag { background: rgba(52,211,153,0.14); color: var(--green); }
+  .gloss-block.tech .gb-tag { background: var(--accent-soft); color: var(--accent); }
+  .gloss-block p { font-size: 0.92rem; line-height: 1.55; color: var(--text-dim); }
+  .gloss-block.simple p { color: var(--text); }
+
   /* ============================================================
      SEARCH PANEL
      ============================================================ */
@@ -680,21 +712,22 @@
       </div>
       <div class="kpi loading">
         <div class="kpi-top">
-          <span class="kpi-tag">Publicadas (30 dias)</span>
+          <span class="kpi-tag">Editais no PNCP</span>
           <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></span>
         </div>
         <div class="kpi-val"><span class="skeleton" id="kpiPubSk"></span><span id="kpiPub" hidden>—</span></div>
-        <div class="kpi-sub">novas contratações no último mês</div>
+        <div class="kpi-sub">total indexado na base nacional</div>
       </div>
       <div class="kpi loading">
         <div class="kpi-top">
-          <span class="kpi-tag">Valor estimado (amostra)</span>
-          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          <span class="kpi-tag">Encerradas</span>
+          <span class="kpi-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
         </div>
         <div class="kpi-val"><span class="skeleton" id="kpiValSk"></span><span id="kpiVal" hidden>—</span></div>
-        <div class="kpi-sub">somatório das publicações recentes</div>
+        <div class="kpi-sub">licitações já encerradas/julgadas</div>
       </div>
     </div>
+    <p class="kpi-hint" id="kpiHint" hidden></p>
 
     <!-- region distribution -->
     <div class="region-row" id="regionRow"></div>
@@ -836,6 +869,11 @@
 <!-- ===================== ANALYSIS OVERLAY ===================== -->
 <div class="modal-overlay" id="analiseOverlay" role="dialog" aria-modal="true">
   <div class="modal" id="analiseModal" style="max-width:860px;"></div>
+</div>
+
+<!-- ===================== GLOSSARY MODAL ===================== -->
+<div class="gloss-overlay" id="glossOverlay" role="dialog" aria-modal="true">
+  <div class="gloss-modal" id="glossModal"></div>
 </div>
 
 <!-- ===================== REPORT OVERLAY ===================== -->
@@ -991,6 +1029,110 @@ const safeUrl = (u) => {
   const s = u.trim();
   return /^https?:\/\//i.test(s) ? s : null;
 };
+
+/* ---- GLOSSÁRIO (educação): termos técnicos explicados de forma simples ---- */
+const GLOSSARY = {
+  "inexigibilidade": { titulo: "Inexigibilidade", aliases: ["inexigibilidade", "inexigibilidade de licitação"],
+    simples: "É quando o governo contrata sem licitação porque não há como ter concorrência — só existe um fornecedor capaz, ou o serviço é único (ex.: um artista consagrado, uma peça exclusiva). Não dá para comparar preços porque não há com quem comparar.",
+    tecnico: "Contratação direta prevista no art. 74 da Lei nº 14.133/2021, cabível quando há inviabilidade de competição: fornecedor exclusivo, profissional do setor artístico ou serviços técnicos especializados de natureza singular. Exige justificativa de preço e da escolha." },
+  "dispensa": { titulo: "Dispensa de licitação", aliases: ["dispensa de licitação", "dispensa"],
+    simples: "É quando a lei permite comprar sem licitação por ser de valor baixo ou por uma situação especial (urgência, emergência). Aqui até daria para ter concorrência, mas a lei dispensa o processo.",
+    tecnico: "Hipótese de contratação direta do art. 75 da Lei nº 14.133/2021 (pequeno valor, emergência, calamidade, etc.). Ao contrário da inexigibilidade, a competição seria viável, mas a lei dispensa o certame." },
+  "pregao": { titulo: "Pregão", aliases: ["pregão eletrônico", "pregão presencial", "pregão - eletrônico", "pregão - presencial", "pregão"],
+    simples: "Modalidade para comprar bens e serviços comuns em que os fornecedores dão lances, como num leilão ao contrário: ganha quem ofertar o menor preço.",
+    tecnico: "Modalidade da Lei nº 14.133/2021 para bens e serviços comuns, com disputa por lances sucessivos (em regra eletrônica). Julgamento por menor preço ou maior desconto." },
+  "concorrencia": { titulo: "Concorrência", aliases: ["concorrência - eletrônica", "concorrência - presencial", "concorrência"],
+    simples: "Modalidade usada em contratações maiores e mais complexas, como obras. É mais formal e tem mais exigências que o pregão.",
+    tecnico: "Modalidade da Lei nº 14.133/2021 para objetos de maior vulto ou complexidade (obras e serviços de engenharia), admitindo menor preço, melhor técnica ou técnica e preço." },
+  "credenciamento": { titulo: "Credenciamento", aliases: ["credenciamento"],
+    simples: "Em vez de escolher um vencedor por preço, o governo cadastra todos os interessados que cumprem as regras e pode contratar qualquer um deles pelo mesmo valor (ex.: rede de clínicas).",
+    tecnico: "Processo auxiliar (art. 79 da Lei nº 14.133/2021) de contratação simultânea de todos os interessados que atendam aos requisitos, quando inviável a competição por preço." },
+  "registro-precos": { titulo: "Registro de preços (SRP)", aliases: ["sistema de registro de preços", "ata de registro de preços", "registro de preços", "srp"],
+    simples: "O governo licita para deixar preços 'registrados' e vai comprando aos poucos, conforme precisa, sem ter que licitar de novo a cada compra.",
+    tecnico: "Sistema de Registro de Preços: registra-se preços para contratações futuras por meio de Ata, sem obrigação de aquisição imediata; admite adesão (carona) na forma da Lei nº 14.133/2021." },
+  "homologacao": { titulo: "Homologação", aliases: ["homologação", "homologada", "homologado"],
+    simples: "É o carimbo final da autoridade aprovando o resultado da licitação. A partir daí, o vencedor está confirmado.",
+    tecnico: "Ato final da autoridade competente que ratifica a legalidade e a conveniência do certame após o julgamento, validando o resultado e autorizando a contratação." },
+  "adjudicacao": { titulo: "Adjudicação", aliases: ["adjudicação", "adjudicada"],
+    simples: "É o ato que entrega oficialmente o objeto ao vencedor — declara quem ganhou e o que vai fornecer.",
+    tecnico: "Ato que atribui ao licitante vencedor o objeto da licitação; em regra antecede a homologação." },
+  "habilitacao": { titulo: "Habilitação", aliases: ["habilitação"],
+    simples: "É a checagem de documentos do fornecedor: ele prova que pode legalmente assumir o contrato (regularidade fiscal, capacidade técnica, etc.).",
+    tecnico: "Fase de verificação das condições de habilitação jurídica, fiscal, social, trabalhista, econômico-financeira e técnica (arts. 62 a 70 da Lei nº 14.133/2021)." },
+  "modo-disputa": { titulo: "Modo de disputa", aliases: ["modo de disputa"],
+    simples: "É a forma como os fornecedores disputam o melhor preço: aberto (lances ao vivo, todos veem) ou fechado (proposta lacrada).",
+    tecnico: "Define a dinâmica dos lances: aberto, fechado ou combinações (aberto-fechado / fechado-aberto), conforme a Lei nº 14.133/2021." },
+  "amparo-legal": { titulo: "Amparo legal", aliases: ["amparo legal"],
+    simples: "É a base na lei que autoriza aquela contratação — o artigo ou regra que o governo usou para comprar.",
+    tecnico: "Dispositivo legal que fundamenta a contratação (modalidade ou hipótese de contratação direta), de registro obrigatório no PNCP." },
+  "edital": { titulo: "Edital", aliases: ["edital"],
+    simples: "É o manual de regras da licitação: o que será comprado, prazos, exigências e como participar.",
+    tecnico: "Instrumento convocatório que define objeto, condições de participação, habilitação, critérios de julgamento e a minuta contratual." },
+  "termo-referencia": { titulo: "Termo de referência", aliases: ["termo de referência"],
+    simples: "Documento que descreve em detalhe o que o governo quer: especificações, quantidades e condições.",
+    tecnico: "Documento técnico (art. 6º, XXIII, da Lei nº 14.133/2021) com objeto, requisitos, quantitativos, prazos e critérios de aceitação." },
+  "menor-preco": { titulo: "Menor preço", aliases: ["menor preço"],
+    simples: "Critério em que vence quem cobrar menos, desde que cumpra todas as exigências.",
+    tecnico: "Critério de julgamento que seleciona a proposta de menor dispêndio, observadas aceitabilidade e habilitação." },
+  "leilao": { titulo: "Leilão", aliases: ["leilão - eletrônico", "leilão - presencial", "leilão"],
+    simples: "Modalidade para VENDER bens do governo que não servem mais, a quem oferecer o maior lance.",
+    tecnico: "Modalidade para alienação de bens inservíveis ou legalmente apreendidos, vencendo o maior lance (Lei nº 14.133/2021)." },
+  "me-epp": { titulo: "ME / EPP", aliases: ["microempresa", "empresa de pequeno porte", "me/epp", "exclusivo me"],
+    simples: "Regras que dão vantagem às empresas pequenas (ME/EPP), às vezes reservando a licitação só para elas.",
+    tecnico: "Tratamento diferenciado da LC nº 123/2006: itens exclusivos até R$ 80 mil, empate ficto e prazo próprio para regularização fiscal." },
+  "revogada": { titulo: "Revogada", aliases: ["revogada"],
+    simples: "A licitação foi cancelada pela administração por conveniência (ex.: deixou de interessar), por um motivo que surgiu depois.",
+    tecnico: "Extinção por razões de interesse público decorrentes de fato superveniente, sem vício de legalidade." },
+  "anulada": { titulo: "Anulada", aliases: ["anulada"],
+    simples: "A licitação foi cancelada porque algo foi feito de forma errada ou ilegal no processo.",
+    tecnico: "Invalidação por ilegalidade, com efeitos retroativos (ex tunc)." },
+  "suspensa": { titulo: "Suspensa", aliases: ["suspensa"],
+    simples: "A licitação foi pausada temporariamente.",
+    tecnico: "Sustação temporária do andamento, por decisão administrativa ou judicial." }
+};
+let GLOSS_RE = null, GLOSS_MAP = null;
+function buildGlossIndex() {
+  GLOSS_MAP = {};
+  const aliases = [];
+  Object.keys(GLOSSARY).forEach((key) => {
+    (GLOSSARY[key].aliases || [key]).forEach((a) => { GLOSS_MAP[a.toLowerCase()] = key; aliases.push(a); });
+  });
+  aliases.sort((a, b) => b.length - a.length);
+  const alt = aliases.map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  try {
+    GLOSS_RE = new RegExp("(?<![\\p{L}\\p{N}])(" + alt + ")(?![\\p{L}\\p{N}])", "giu");
+  } catch (e) {
+    GLOSS_RE = new RegExp("\\b(" + alt + ")\\b", "gi");
+  }
+}
+function glossify(text) {
+  if (text == null || text === "") return "";
+  if (!GLOSS_RE) buildGlossIndex();
+  const safe = esc(String(text));
+  GLOSS_RE.lastIndex = 0;
+  return safe.replace(GLOSS_RE, (m) => {
+    const key = GLOSS_MAP[m.toLowerCase()];
+    return key ? '<span class="gloss" data-term="' + key + '">' + m + '</span>' : m;
+  });
+}
+function openGloss(key) {
+  const g = GLOSSARY[key];
+  const modal = $("#glossModal");
+  if (!g) { return; }
+  modal.innerHTML =
+    '<div class="gm-head">' +
+      '<span class="gm-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 7a5 5 0 0 0-5 5"/><circle cx="12" cy="12" r="10"/><path d="M12 16h.01"/><path d="M12 13a2.5 2.5 0 1 0-2.5-2.5"/></svg></span>' +
+      '<h3>' + esc(g.titulo) + '</h3>' +
+      '<button class="gm-close" id="glossClose" aria-label="Fechar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+    '</div>' +
+    '<div class="gm-body">' +
+      '<div class="gloss-block simple"><span class="gb-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>Em termos simples</span><p>' + esc(g.simples) + '</p></div>' +
+      '<div class="gloss-block tech"><span class="gb-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3 2 9l10 6 10-6-10-6zM2 17l10 6 10-6"/></svg>Definição técnica</span><p>' + esc(g.tecnico) + '</p></div>' +
+    '</div>';
+  $("#glossOverlay").classList.add("open");
+  $("#glossClose").onclick = closeGloss;
+}
+function closeGloss() { $("#glossOverlay").classList.remove("open"); }
 
 const fmtBRL = (v) => {
   if (v == null || isNaN(v)) return "—";
@@ -1292,23 +1434,32 @@ async function loadHero() {
 }
 
 async function loadKpiPNCP() {
-  // propostas abertas (pregão eletrônico como proxy do volume nacional)
+  let anyFail = false;
+  // recebendo propostas agora (nacional) via /search
   try {
-    const ab = await pncpService.propostasAbertas({ modalidade: 6 });
-    setKpi("kpiAbertas", "kpiAbertasSk", ab.totalRegistros || 0, fmtInt);
-  } catch (e) { failKpi("kpiAbertas", "kpiAbertasSk"); }
+    const r = await pncpService.searchEditais({ q: "", status: "recebendo_proposta", pagina: 1 });
+    setKpi("kpiAbertas", "kpiAbertasSk", r.total || 0, fmtInt);
+  } catch (e) { failKpi("kpiAbertas", "kpiAbertasSk"); anyFail = true; }
+  // total de editais indexados no PNCP
+  try {
+    const r = await pncpService.searchEditais({ q: "", status: "", pagina: 1 });
+    setKpi("kpiPub", "kpiPubSk", r.total || 0, fmtInt);
+  } catch (e) { failKpi("kpiPub", "kpiPubSk"); anyFail = true; }
+  // encerradas
+  try {
+    const r = await pncpService.searchEditais({ q: "", status: "encerradas", pagina: 1 });
+    setKpi("kpiVal", "kpiValSk", r.total || 0, fmtInt);
+  } catch (e) { failKpi("kpiVal", "kpiValSk"); anyFail = true; }
 
-  // publicadas últimos 30 dias + soma estimada da 1ª página (amostra)
-  try {
-    const di = ymd(daysAgo(30)), df = ymd(daysAgo(0));
-    const pub = await pncpService.contratacoesPublicacao({ modalidade: 6, dataInicial: di, dataFinal: df, pagina: 1 });
-    setKpi("kpiPub", "kpiPubSk", pub.totalRegistros || 0, fmtInt);
-    const soma = (pub.data || []).reduce((s, c) => s + (Number(c.valorTotalEstimado) || 0), 0);
-    setKpiText("kpiVal", "kpiValSk", fmtBRLCompact(soma));
-  } catch (e) {
-    failKpi("kpiPub", "kpiPubSk");
-    failKpi("kpiVal", "kpiValSk");
+  const hint = $("#kpiHint");
+  if (anyFail) {
     updateSrcPill("err");
+    hint.hidden = false;
+    hint.innerHTML = state.proxyBase
+      ? 'Indicadores nacionais indisponíveis no momento — verifique o proxy do PNCP em ⚙ (a busca por município via IBGE não depende dele).'
+      : 'Os indicadores nacionais precisam do proxy do PNCP. Configure em ⚙ (a contagem de municípios vem do IBGE e não depende de proxy).';
+  } else {
+    hint.hidden = true;
   }
 }
 function setKpi(id, skId, val, fmt) {
@@ -1715,7 +1866,7 @@ function buildTimeline(c) {
       '<div class="' + cls + '">' +
         '<div class="tl-line"></div>' +
         '<div class="tl-node"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + s.ico + '</svg></div>' +
-        '<div class="tl-label">' + s.label + '</div>' +
+        '<div class="tl-label">' + glossify(s.label) + '</div>' +
         (s.date ? '<div class="tl-date">' + fmtDateShort(new Date(s.date).toISOString()) + '</div>' : '') +
       '</div>';
   });
@@ -1785,10 +1936,10 @@ function renderModalBody(c, ref) {
   head.innerHTML =
     '<button class="modal-close" id="modalCloseBtn" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
     '<div class="mh-badges">' +
-      '<span class="badge b-mod">' + esc(c.modalidadeNome || "Edital") + '</span>' +
+      '<span class="badge b-mod">' + glossify(c.modalidadeNome || "Edital") + '</span>' +
       '<span class="st-tag ' + tag.cls + '" style="padding:4px 0;"><span class="st-dot"></span>' + esc(tag.nome) + '</span>' +
     '</div>' +
-    '<h3 id="modalTitle">' + esc(c.objetoCompra || "Contratação pública") + '</h3>' +
+    '<h3 id="modalTitle">' + glossify(c.objetoCompra || "Contratação pública") + '</h3>' +
     '<div class="mh-org"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>' +
       esc(orgao.razaoSocial || unidade.nomeUnidade || "Órgão não informado") + ' · ' + esc(unidade.municipioNome || state.munNome) + '/' + esc(unidade.ufSigla || state.uf) + '</div>';
 
@@ -1811,7 +1962,7 @@ function renderModalBody(c, ref) {
     '</div>' +
     '<div class="section-title">Dados da contratação</div>' +
     '<div class="detail-grid">' +
-      detailItems.map((d) => '<div class="detail-item' + (d.full ? " full" : "") + '"><div class="di-k">' + esc(d.k) + '</div><div class="di-v' + (d.mono ? " mono" : "") + '">' + esc(d.v) + '</div></div>').join("") +
+      detailItems.map((d) => '<div class="detail-item' + (d.full ? " full" : "") + '"><div class="di-k">' + glossify(d.k) + '</div><div class="di-v' + (d.mono ? " mono" : "") + '">' + (d.mono ? esc(d.v) : glossify(d.v)) + '</div></div>').join("") +
     '</div>' +
     '<div class="section-title">Itens da contratação</div>' +
     '<div class="items-wrap" id="itemsWrap"><div class="items-mini-load"><div class="spinner" style="width:26px;height:26px;"></div><div style="margin-top:10px;">Carregando itens…</div></div></div>' +
@@ -2698,9 +2849,14 @@ function init() {
   $("#favsOverlay").addEventListener("click", closeFavs);
   $("#analiseOverlay").addEventListener("click", (e) => { if (e.target.id === "analiseOverlay") closeAnalise(); });
   $("#reportOverlay").addEventListener("click", (e) => { if (e.target.id === "reportOverlay") closeReport(); });
+  $("#glossOverlay").addEventListener("click", (e) => { if (e.target.id === "glossOverlay") closeGloss(); });
+  document.addEventListener("click", (e) => {
+    const g = e.target.closest(".gloss");
+    if (g) { e.preventDefault(); e.stopPropagation(); openGloss(g.dataset.term); }
+  });
 
   $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); hideMunPop(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeGloss(); closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); hideMunPop(); } });
 
   if (state.proxyBase) updateSrcPill("warn");
 }
