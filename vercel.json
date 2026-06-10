@@ -1,5 +1,8 @@
 {
-  "rewrites": [
-    { "source": "/api/pncp/:path*", "destination": "/api/proxy" }
+  "crons": [
+    {
+      "path": "/api/monitor",
+      "schedule": "0 12 * * *"
+    }
   ]
 }

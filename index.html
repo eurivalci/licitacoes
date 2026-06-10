@@ -238,6 +238,28 @@
   .preview-scroll td { padding: 8px 11px; border-top: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
   .preview-scroll td.n { font-family: var(--font-mono); text-align: right; color: var(--text); }
 
+  /* market intelligence */
+  .mkt-tabs { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 11px; overflow: hidden; margin-bottom: 16px; }
+  .mkt-tabs button { padding: 10px 18px; font-size: 0.88rem; font-weight: 600; color: var(--text-dim); transition: 0.14s; }
+  .mkt-tabs button.on { background: var(--accent); color: #042; }
+  .sim-box { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+  .sim-box .sim-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sim-box .sim-input { width: 150px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 9px; font-family: var(--font-mono); }
+  .sim-box .sim-input:focus { outline: none; border-color: var(--accent); }
+  .sim-verdict { margin-top: 10px; font-size: 0.88rem; line-height: 1.5; padding: 10px 13px; border-radius: 9px; }
+  .sim-verdict.good { background: rgba(52,211,153,0.12); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+  .sim-verdict.mid { background: rgba(251,155,58,0.12); color: var(--amber); border: 1px solid rgba(251,155,58,0.3); }
+  .sim-verdict.bad { background: rgba(248,113,106,0.12); color: var(--red); border: 1px solid rgba(248,113,106,0.3); }
+  .lnk { color: var(--accent); cursor: pointer; font-weight: 600; }
+  .lnk:hover { text-decoration: underline; }
+  .comp-detail { background: var(--bg-2); }
+  .comp-detail td { padding: 0 !important; }
+  .comp-detail .cd-inner { padding: 12px 14px; font-size: 0.82rem; color: var(--text-dim); }
+  .comp-detail .cd-inner div { padding: 4px 0; border-top: 1px solid var(--border); }
+  .comp-detail .cd-inner div:first-child { border-top: none; }
+  .mkt-spark { display: inline-flex; align-items: flex-end; gap: 2px; height: 22px; }
+  .mkt-spark i { width: 4px; background: var(--accent); border-radius: 2px; opacity: 0.7; }
+
   /* alerts drawer reuse drawer styles; specific bits */
   .alert-item {
     border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px;
@@ -879,6 +901,11 @@
 <!-- ===================== REPORT OVERLAY ===================== -->
 <div class="modal-overlay" id="reportOverlay" role="dialog" aria-modal="true">
   <div class="modal" id="reportModal" style="max-width:920px;"></div>
+</div>
+
+<!-- ===================== MARKET INTELLIGENCE OVERLAY ===================== -->
+<div class="modal-overlay" id="marketOverlay" role="dialog" aria-modal="true">
+  <div class="modal" id="marketModal" style="max-width:960px;"></div>
 </div>
 
 <!-- ===================== FOOTER ===================== -->
@@ -1745,6 +1772,7 @@ function renderResults() {
         '<span class="chip">' + (state.searchMode ? 'Busca por <b>objeto</b>' : 'Período: <b>' + state.periodo + 'd</b>') + '</span>' +
         saveBtn +
         '<button class="btn-save-alert" id="btnReport" style="border-color:var(--accent-2);color:var(--accent-2);background:rgba(56,189,248,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> Gerar relatório</button>' +
+        '<button class="btn-save-alert" id="btnMarket" style="border-color:var(--violet);color:var(--violet);background:rgba(167,139,250,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg> Inteligência de mercado</button>' +
       '</div>' +
     '</div>' +
     '<div class="card-grid" id="cardGrid"></div>' +
@@ -1757,6 +1785,8 @@ function renderResults() {
   if (sb && !alreadySaved) sb.onclick = addAlertFromCurrent;
   const rb = $("#btnReport");
   if (rb) rb.onclick = openReport;
+  const mb = $("#btnMarket");
+  if (mb) mb.onclick = openMarket;
 
   if (state.pagina < state.totalPaginas) {
     const btn = el("button", { class: "btn-ghost" }, "Carregar mais (página " + (state.pagina + 1) + " de " + state.totalPaginas + ")");
@@ -2803,6 +2833,203 @@ function closeReport() {
   if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
 }
 
+/* ============================== 6f. INTELIGÊNCIA DE MERCADO ============================== */
+const marketState = { gathered: null, tab: "precos", scope: "" };
+const STOP_TOK = new Set(["de","da","do","das","dos","para","com","por","sem","e","ou","em","no","na","kg","g","mg","ml","l","un","und","unid","unidade","unidades","pct","cx","caixa","pacote","litro","litros","metro","metros","mm","cm","m2","m3","m","tipo","cor","nº","no","ref","cod","codigo","marca","modelo"]);
+
+function normItemKey(desc) {
+  let s = (desc || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s = s.replace(/[^a-z0-9\s]/g, " ");
+  const toks = s.split(/\s+/).filter((t) => t && t.length > 2 && !STOP_TOK.has(t) && !/^\d/.test(t));
+  return Array.from(new Set(toks)).sort().slice(0, 6).join(" ");
+}
+function median(arr) {
+  if (!arr.length) return null;
+  const a = arr.slice().sort((x, y) => x - y), m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
+
+function openMarket() {
+  if (!state.items.length) { toast("Faça uma busca primeiro."); return; }
+  const scope = state.searchMode ? (parseTerms(state.keyword).join(" + ") || state.keyword) : (state.munNome + "/" + state.uf);
+  marketState.scope = scope;
+  const need = !marketState.gathered;
+  $("#marketModal").innerHTML =
+    '<div class="modal-head"><button class="modal-close" id="mktClose" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '<div class="mh-badges"><span class="badge b-mode">Inteligência de mercado</span></div>' +
+      '<h3>Radar de preços &amp; concorrentes</h3>' +
+      '<div class="mh-org">Escopo: <b style="color:var(--text);margin-left:5px;">' + esc(scope) + '</b> · ' + Math.min(state.items.length, REPORT_MAX_CONTRAT) + ' licitações</div>' +
+    '</div>' +
+    '<div class="modal-body" id="mktBody">' +
+      (need
+        ? '<div class="state-box" style="padding:40px 24px;"><div class="sb-ico" style="color:var(--violet);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div>' +
+          '<h4>Analisar este mercado</h4><p>Vou coletar os itens e vencedores das licitações encerradas deste escopo para montar a referência de preços e o perfil dos concorrentes.</p>' +
+          '<div class="sb-actions"><button class="btn-primary" id="mktGather" style="grid-column:unset;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg> Analisar mercado</button></div>' +
+          '<div id="mktProg"></div></div>'
+        : renderMarketShell()) +
+    '</div>';
+  $("#marketOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#mktClose").onclick = closeMarket;
+  if (need) $("#mktGather").onclick = runMarketGather;
+  else bindMarketTabs();
+}
+
+async function runMarketGather() {
+  const list = state.items.slice(0, REPORT_MAX_CONTRAT);
+  $("#mktProg").innerHTML = '<div style="margin-top:18px;font-size:0.85rem;color:var(--text-dim);" id="mktProgTxt">Processando 0 de ' + list.length + '…</div><div class="progress"><i id="mktProgBar"></i></div>';
+  try {
+    marketState.gathered = await gatherReportData(list, (done, total) => {
+      const t = $("#mktProgTxt"), b = $("#mktProgBar");
+      if (t) t.textContent = "Processando " + done + " de " + total + " licitações…";
+      if (b) b.style.width = (done / total * 100) + "%";
+    });
+    $("#mktBody").innerHTML = renderMarketShell();
+    bindMarketTabs();
+  } catch (e) {
+    $("#mktProg").innerHTML = '<p style="color:var(--red);margin-top:14px;">Falha ao coletar: ' + esc(e && e.message ? e.message : "erro") + '. Verifique o proxy (⚙).</p>';
+  }
+}
+
+function renderMarketShell() {
+  return '<div class="mkt-tabs" id="mktTabs">' +
+      '<button data-t="precos" class="' + (marketState.tab === "precos" ? "on" : "") + '">Preços por item</button>' +
+      '<button data-t="concorrentes" class="' + (marketState.tab === "concorrentes" ? "on" : "") + '">Concorrentes</button>' +
+    '</div><div id="mktTabBody"></div>';
+}
+function bindMarketTabs() {
+  $$("#mktTabs button").forEach((b) => b.onclick = () => {
+    marketState.tab = b.dataset.t;
+    $$("#mktTabs button").forEach((x) => x.classList.toggle("on", x === b));
+    renderMarketTab();
+  });
+  renderMarketTab();
+}
+function renderMarketTab() {
+  if (marketState.tab === "precos") renderPriceRadar();
+  else renderCompetitors();
+}
+
+// ---- Radar de preços (agrupamento por item semelhante) ----
+function buildPriceGroups() {
+  const groups = {};
+  marketState.gathered.forEach((g) => g.itens.forEach(({ item, venc }) => {
+    if (!(venc && venc.vUnit != null && isFinite(venc.vUnit))) return;
+    const key = normItemKey(item.descricao || item.materialOuServicoNome || "");
+    if (!key) return;
+    if (!groups[key]) groups[key] = { rep: item.descricao || item.materialOuServicoNome || key, prices: [], unidade: item.unidadeMedida || "" };
+    groups[key].prices.push(Number(venc.vUnit));
+  }));
+  return Object.keys(groups).map((k) => {
+    const gr = groups[k];
+    gr.prices.sort((a, b) => a - b);
+    gr.key = k; gr.count = gr.prices.length;
+    gr.min = gr.prices[0]; gr.max = gr.prices[gr.prices.length - 1];
+    gr.mediana = median(gr.prices); gr.media = gr.prices.reduce((s, v) => s + v, 0) / gr.prices.length;
+    return gr;
+  }).filter((g) => g.count >= 1).sort((a, b) => b.count - a.count);
+}
+function renderPriceRadar() {
+  const groups = buildPriceGroups();
+  const body = $("#mktTabBody");
+  if (!groups.length) {
+    body.innerHTML = '<div class="items-mini-load">Nenhum item com vencedor encontrado neste escopo. Tente um termo com licitações já encerradas/homologadas.</div>';
+    return;
+  }
+  body.innerHTML =
+    '<p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">Itens semelhantes agrupados pelos preços unitários homologados dos vencedores. Clique em <b>Simular</b> para ver onde o seu preço se posiciona.</p>' +
+    '<div class="preview-scroll"><table><thead><tr><th>Item (representativo)</th><th style="text-align:right;">Ocorr.</th><th style="text-align:right;">Mínimo</th><th style="text-align:right;">Mediana</th><th style="text-align:right;">Média</th><th style="text-align:right;">Máximo</th><th></th></tr></thead><tbody id="radarBody"></tbody></table></div>';
+  const tb = $("#radarBody");
+  groups.slice(0, 200).forEach((g, i) => {
+    const tr = el("tr");
+    tr.innerHTML =
+      '<td title="' + esc(g.rep) + '">' + esc(g.rep.slice(0, 70)) + (g.rep.length > 70 ? "…" : "") + (g.unidade ? ' <span style="color:var(--muted);">(' + esc(g.unidade) + ')</span>' : '') + '</td>' +
+      '<td class="n">' + g.count + '</td>' +
+      '<td class="n">' + fmtBRL2(g.min) + '</td>' +
+      '<td class="n" style="color:var(--gold);">' + fmtBRL2(g.mediana) + '</td>' +
+      '<td class="n">' + fmtBRL2(g.media) + '</td>' +
+      '<td class="n">' + fmtBRL2(g.max) + '</td>' +
+      '<td><span class="lnk" data-i="' + i + '">Simular</span></td>';
+    tb.appendChild(tr);
+    const simRow = el("tr");
+    simRow.style.display = "none";
+    simRow.innerHTML = '<td colspan="7"></td>';
+    tb.appendChild(simRow);
+    tr.querySelector(".lnk").onclick = () => {
+      if (simRow.style.display === "none") { simRow.style.display = ""; buildSimulator(simRow.firstChild, g); }
+      else simRow.style.display = "none";
+    };
+  });
+}
+function buildSimulator(td, g) {
+  td.innerHTML =
+    '<div class="sim-box"><div class="sim-row"><span style="font-size:0.85rem;color:var(--text-dim);">Seu preço unitário para <b style="color:var(--text);">' + esc(g.rep.slice(0, 50)) + '</b>:</span>' +
+    '<input class="sim-input" type="number" step="0.01" min="0" placeholder="0,00" id="simInput" /></div><div id="simOut"></div></div>';
+  const inp = td.querySelector("#simInput");
+  inp.oninput = () => {
+    const p = parseFloat(String(inp.value).replace(",", "."));
+    const out = td.querySelector("#simOut");
+    if (!(p > 0)) { out.innerHTML = ""; return; }
+    const beat = g.prices.filter((x) => x > p).length;
+    const pct = Math.round(beat / g.prices.length * 100);
+    let cls = "mid", msg;
+    if (p <= g.min) { cls = "good"; msg = "Abaixo de <b>todos</b> os vencedores históricos — muito agressivo (verifique sua margem)."; }
+    else if (p <= g.mediana) { cls = "good"; msg = "Abaixo da mediana — <b>competitivo</b>. Você teria batido " + pct + "% dos preços vencedores."; }
+    else if (p <= g.max) { cls = "mid", msg = "Acima da mediana. Bateria " + pct + "% dos vencedores — espaço para ajustar."; }
+    else { cls = "bad"; msg = "Acima de <b>todos</b> os vencedores — provavelmente não competitivo neste item."; }
+    out.innerHTML = '<div class="sim-verdict ' + cls + '">' + msg + ' <span style="opacity:0.8;">(mediana ' + fmtBRL2(g.mediana) + ' · faixa ' + fmtBRL2(g.min) + '–' + fmtBRL2(g.max) + ')</span></div>';
+  };
+  inp.focus();
+}
+
+// ---- Concorrentes (agregado por fornecedor vencedor, no escopo) ----
+function buildCompetitors() {
+  const comp = {};
+  marketState.gathered.forEach((g) => g.itens.forEach(({ item, venc }) => {
+    if (!(venc && venc.fornecedor)) return;
+    const key = (venc.ni || venc.fornecedor).toString();
+    if (!comp[key]) comp[key] = { nome: venc.fornecedor, ni: venc.ni || "", itens: 0, total: 0, lic: new Set(), ufs: new Set(), exemplos: [] };
+    const c = comp[key];
+    c.itens++;
+    if (venc.vTot != null && isFinite(venc.vTot)) c.total += Number(venc.vTot);
+    if (g.c.numeroControlePNCP) c.lic.add(g.c.numeroControlePNCP);
+    const uf = (g.c.unidadeOrgao || {}).ufSigla; if (uf) c.ufs.add(uf);
+    if (c.exemplos.length < 8) c.exemplos.push({ desc: item.descricao || item.materialOuServicoNome || "—", v: venc.vUnit, orgao: (g.c.orgaoEntidade || {}).razaoSocial || "", mun: (g.c.unidadeOrgao || {}).municipioNome || "" });
+  }));
+  return Object.values(comp).map((c) => { c.licCount = c.lic.size; c.ufCount = c.ufs.size; c.ticket = c.itens ? c.total / c.itens : 0; return c; }).sort((a, b) => b.total - a.total);
+}
+function renderCompetitors() {
+  const comps = buildCompetitors();
+  const body = $("#mktTabBody");
+  if (!comps.length) { body.innerHTML = '<div class="items-mini-load">Nenhum vencedor identificado neste escopo (licitações ainda sem resultado publicado).</div>'; return; }
+  body.innerHTML =
+    '<p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">Fornecedores que venceram itens <b>dentro deste escopo de busca</b>, ordenados por valor homologado. Clique para ver o que cada um ganhou.</p>' +
+    '<div class="preview-scroll"><table><thead><tr><th>Fornecedor</th><th>CNPJ/CPF</th><th style="text-align:right;">Itens</th><th style="text-align:right;">Licitações</th><th style="text-align:right;">UFs</th><th style="text-align:right;">Total homol.</th><th style="text-align:right;">Ticket médio</th></tr></thead><tbody id="compBody"></tbody></table></div>';
+  const tb = $("#compBody");
+  comps.slice(0, 150).forEach((c) => {
+    const tr = el("tr");
+    const niFmt = c.ni && String(c.ni).replace(/\D/g, "").length === 14 ? fmtCNPJ(c.ni) : (c.ni || "—");
+    tr.innerHTML =
+      '<td><span class="lnk">' + esc(c.nome.slice(0, 46)) + (c.nome.length > 46 ? "…" : "") + '</span></td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.78rem;">' + esc(niFmt) + '</td>' +
+      '<td class="n">' + c.itens + '</td><td class="n">' + c.licCount + '</td><td class="n">' + c.ufCount + '</td>' +
+      '<td class="n" style="color:var(--green);">' + fmtBRLCompact(c.total) + '</td>' +
+      '<td class="n" style="color:var(--gold);">' + fmtBRL2(c.ticket) + '</td>';
+    tb.appendChild(tr);
+    const det = el("tr", { class: "comp-detail" });
+    det.style.display = "none";
+    det.innerHTML = '<td colspan="7"><div class="cd-inner">' +
+      c.exemplos.map((e) => '<div>' + esc(e.desc.slice(0, 80)) + ' — <b style="color:var(--gold);">' + fmtBRL2(e.v) + '</b> <span style="color:var(--muted);">· ' + esc(e.orgao.slice(0, 40)) + (e.mun ? " (" + esc(e.mun) + ")" : "") + '</span></div>').join("") +
+      '</div></td>';
+    tb.appendChild(det);
+    tr.querySelector(".lnk").onclick = () => { det.style.display = det.style.display === "none" ? "" : "none"; };
+  });
+}
+function closeMarket() {
+  $("#marketOverlay").classList.remove("open");
+  if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
+}
+
 /* ============================== 7. CONTROLLER ============================== */
 function init() {
   populateModalidades();
@@ -2839,6 +3066,7 @@ function init() {
   $("#favsOverlay").addEventListener("click", closeFavs);
   $("#analiseOverlay").addEventListener("click", (e) => { if (e.target.id === "analiseOverlay") closeAnalise(); });
   $("#reportOverlay").addEventListener("click", (e) => { if (e.target.id === "reportOverlay") closeReport(); });
+  $("#marketOverlay").addEventListener("click", (e) => { if (e.target.id === "marketOverlay") closeMarket(); });
   $("#glossOverlay").addEventListener("click", (e) => { if (e.target.id === "glossOverlay") closeGloss(); });
   document.addEventListener("click", (e) => {
     const g = e.target.closest(".gloss");
@@ -2846,7 +3074,7 @@ function init() {
   });
 
   $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeGloss(); closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); hideMunPop(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeGloss(); closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); closeMarket(); hideMunPop(); } });
 
   if (state.proxyBase) updateSrcPill("warn");
 }
