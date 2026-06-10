@@ -813,7 +813,7 @@
         </select>
       </div>
     </div>
-    <p class="filters-hint" id="filtersHint">Dica: digite uma palavra-chave para buscar em todo o país, ou escolha um município para listar tudo dele. Os filtros de modalidade/período valem para a busca por município.</p>
+    <p class="filters-hint" id="filtersHint">Dica: com uma <b>UF/município</b> selecionado, a palavra-chave <b>filtra os registros daquele local</b> (pelo objeto), respeitando modalidade e período. Sem UF, a palavra-chave faz uma <b>busca nacional</b> por objeto.</p>
   </section>
 
   <!-- ===================== RESULTS ===================== -->
@@ -1363,8 +1363,8 @@ const pncpService = {
     if (uf) qs.set("ufs", uf);
     if (status) qs.set("status", status);
     const { data } = await pncpFetch("/search/?" + qs.toString());
-    const items = (data && (data.items || data.data || data.results)) || [];
-    const total = (data && (data.total != null ? data.total : data.totalRegistros)) || items.length;
+    const items = (data && (data.items || data.data || data.results || data.editais || (Array.isArray(data) ? data : null))) || [];
+    const total = (data && (data.total != null ? data.total : (data.totalRegistros != null ? data.totalRegistros : (data.totalElements != null ? data.totalElements : data.count)))) || items.length;
     return { items: items.map(normalizeSearchItem), total };
   },
   // Detalhe completo de uma contratação (fonte autoritativa do modal).
@@ -1529,11 +1529,13 @@ function populateStatus() {
 }
 function updateSearchBtn() {
   const kw = $("#kwInput").value.trim();
-  $("#searchBtn").disabled = !(kw || state.munId);
-  // modalidade/período só fazem sentido no modo município
-  const muniMode = !kw;
-  $("#modSel").disabled = !muniMode;
-  $("#periodSel").disabled = !muniMode;
+  const scoped = !!(state.munId || state.uf);
+  $("#searchBtn").disabled = !(kw || state.munId || state.uf);
+  // modalidade/período valem no modo município e na busca por palavra COM escopo
+  // (que também usa /consulta). Só na busca nacional pura (palavra sem UF) ficam inativos.
+  const usesConsulta = !kw || scoped;
+  $("#modSel").disabled = !usesConsulta;
+  $("#periodSel").disabled = !usesConsulta;
 }
 function toggleKwChip(term) {
   const input = $("#kwInput");
@@ -1614,11 +1616,15 @@ async function runSearch(reset = true) {
   if (state.loading) return;
   const kw = $("#kwInput").value.trim();
   state.keyword = kw;
-  state.searchMode = !!kw;
   state.status = $("#statusSel").value;
-  state.matchedAlert = (!!kw) ? findAlert(kw, state.uf, state.status) : null;
+  const scoped = !!(state.munId || state.uf);
+  // tipo de busca: com escopo (UF/município) filtramos via /consulta (confiável);
+  // palavra-chave sem escopo usa a busca nacional /search.
+  state.searchKind = !kw ? "muni" : (scoped ? "muniKw" : "nat");
+  state.searchMode = (state.searchKind === "nat");
+  state.matchedAlert = (state.searchKind === "nat") ? findAlert(kw, state.uf, state.status) : null;
 
-  if (!kw && !state.munId) { toast("Digite uma palavra-chave ou selecione um município."); return; }
+  if (!kw && !state.munId && !state.uf) { toast("Digite uma palavra-chave ou selecione uma UF/município."); return; }
 
   state.loading = true;
   if (reset) { state.pagina = 1; state.items = []; }
@@ -1628,10 +1634,9 @@ async function runSearch(reset = true) {
   if (reset) renderLoadingState();
 
   try {
-    if (state.searchMode) await searchByKeyword(reset);
+    if (state.searchKind === "nat") await searchByKeyword(reset);
     else await searchByMunicipio(reset);
     renderResults();
-    // marca como "vistos" os itens do alerta correspondente
     if (state.matchedAlert) {
       const ids = state.items.map((i) => i.numeroControlePNCP).filter(Boolean);
       const merged = Array.from(new Set([...ids, ...(state.matchedAlert.seen || [])]));
@@ -1648,6 +1653,7 @@ async function runSearch(reset = true) {
   }
 }
 
+const normTxt = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 function parseTerms(kw) { return (kw || "").split(",").map((s) => s.trim()).filter(Boolean); }
 
 async function searchByKeyword(reset) {
@@ -1695,17 +1701,33 @@ async function searchByMunicipio(reset) {
     total += r.totalRegistros || 0;
     maxPaginas = Math.max(maxPaginas, r.totalPaginas || 1);
   }
+  // filtro por palavra-chave no objeto (quando há termo + escopo de UF/município)
+  let matched = 0;
+  if (state.keyword) {
+    const terms = parseTerms(state.keyword).map(normTxt).filter(Boolean);
+    collected = collected.filter((c) => {
+      const o = normTxt(c.objetoCompra || "");
+      return terms.some((t) => o.includes(t));
+    });
+    matched = collected.length;
+  }
   const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
   collected.forEach((c) => { if (!seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
   state.items.sort((a, b) => new Date(b.dataPublicacaoPncp || 0) - new Date(a.dataPublicacaoPncp || 0));
-  state.totalRegistros = total;
+  state.totalRegistros = state.keyword ? state.items.length : total;
   state.totalPaginas = maxPaginas;
 }
 
 function renderLoadingState() {
-  const ctx = state.searchMode
-    ? 'objeto contendo <b>"' + esc(state.keyword) + '"</b>' + (state.uf ? ' em <b>' + esc(state.uf) + '</b>' : ' no Brasil')
-    : 'contratações de <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b>';
+  let ctx;
+  if (state.searchKind === "nat") {
+    ctx = 'objeto contendo <b>"' + esc(state.keyword) + '"</b>' + (state.uf ? ' em <b>' + esc(state.uf) + '</b>' : ' no Brasil');
+  } else {
+    const escopo = state.munNome ? esc(state.munNome) + '/' + esc(state.uf) : esc(state.uf);
+    ctx = state.keyword
+      ? 'objeto contendo <b>"' + esc(state.keyword) + '"</b> em <b>' + escopo + '</b>'
+      : 'contratações de <b>' + escopo + '</b>';
+  }
   $("#results").innerHTML =
     '<div class="state-box"><div class="spinner"></div>' +
     '<h4 style="margin-top:20px;">Consultando o PNCP…</h4>' +
@@ -1729,10 +1751,12 @@ function renderErrorState(e) {
 
 function renderResults() {
   const root = $("#results");
+  const escopoNome = state.munNome ? esc(state.munNome) + '/' + esc(state.uf) : esc(state.uf || "Brasil");
   if (!state.items.length) {
-    const msg = state.searchMode
-      ? 'Nenhum edital com objeto contendo <b>"' + esc(state.keyword) + '"</b>' + (state.uf ? ' em <b>' + esc(state.uf) + '</b>' : '') + '. Tente termos mais amplos ou remova o filtro de UF/status.'
-      : 'Não há registros para <b>' + esc(state.munNome) + '/' + esc(state.uf) + '</b> no período e modalidade selecionados. Tente ampliar o período ou a modalidade “Principais”.';
+    let msg;
+    if (state.searchKind === "nat") msg = 'Nenhum edital com objeto contendo <b>"' + esc(state.keyword) + '"</b>' + (state.uf ? ' em <b>' + esc(state.uf) + '</b>' : '') + '. Tente termos mais amplos ou remova o filtro de UF/status.';
+    else if (state.searchKind === "muniKw") msg = 'Nenhuma contratação com objeto contendo <b>"' + esc(state.keyword) + '"</b> em <b>' + escopoNome + '</b> no período/modalidade. Amplie o período, troque a modalidade para “Principais”, ou use termos mais curtos.';
+    else msg = 'Não há registros para <b>' + escopoNome + '</b> no período e modalidade selecionados. Tente ampliar o período ou a modalidade “Principais”.';
     root.innerHTML =
       '<div class="state-box"><div class="sb-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>' +
       '<h4>Nenhum resultado encontrado</h4><p>' + msg + '</p></div>';
@@ -1741,12 +1765,14 @@ function renderResults() {
 
   const somaEst = state.items.reduce((s, c) => s + (Number(c.valorTotalEstimado) || 0), 0);
   const somaHom = state.items.reduce((s, c) => s + (Number(c.valorTotalHomologado) || 0), 0);
-  const titulo = state.searchMode
+  const titulo = state.searchKind === "nat"
     ? '“' + esc(state.keyword) + '”'
-    : esc(state.munNome) + ' <small>/ ' + esc(state.uf) + '</small>';
+    : (state.searchKind === "muniKw"
+        ? '“' + esc(state.keyword) + '” <small>em ' + escopoNome + '</small>'
+        : (state.munNome ? esc(state.munNome) + ' <small>/ ' + esc(state.uf) + '</small>' : esc(state.uf)));
   const escopo = state.searchMode
     ? (state.uf ? esc(state.uf) : 'Brasil') + (state.munNome ? ' · ' + esc(state.munNome) : '')
-    : esc(state.uf);
+    : escopoNome;
 
   const alreadySaved = state.searchMode && !!findAlert(state.keyword, state.uf, state.status);
   const saveBtn = state.searchMode
@@ -1758,10 +1784,12 @@ function renderResults() {
       '</button>'
     : '';
 
-  const multi = state.searchMode && state.searchTermsCount > 1;
-  const countLabel = multi
+  let countLabel;
+  if (state.searchKind === "nat") countLabel = (state.searchTermsCount > 1)
     ? state.items.length + ' resultados únicos (' + state.searchTermsCount + ' termos)'
     : state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '');
+  else if (state.searchKind === "muniKw") countLabel = state.items.length + ' encontradas p/ “' + esc(state.keyword) + '”';
+  else countLabel = state.items.length + ' exibidas' + (state.totalRegistros ? ' de ' + fmtInt(state.totalRegistros) : '');
 
   root.innerHTML =
     '<div class="results-bar">' +
