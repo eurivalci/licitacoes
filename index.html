@@ -949,6 +949,8 @@ const CFG = {
   LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts", FAVS: "pncp_favs", ANALISE: "pncp_analise_endpoint" },
   HTTP_TIMEOUT: 18000,
   PAGE_SIZE: 20,
+  CONTRATOS_PAGE: 50,            // tamanho de página da consulta de contratos (nível 2)
+  CONTRATOS_SCAN_PAGES: 25,      // páginas varridas por execução (teto p/ não travar o navegador)
   CACHE_TTL: 1000 * 60 * 10,                      // 10 min
   SEARCH_PAGE: 12,
   PUBLIC_PROXIES: [
@@ -1340,7 +1342,17 @@ const pncpService = {
     const { data } = await pncpFetch("/consulta/v1/contratacoes/publicacao?" + qs.toString());
     return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
   },
-  // Propostas em aberto a nível nacional (KPI hero).
+  // Contratos publicados (consulta documentada) — usada na "atuação no estado" (nível 2).
+  async contratos({ uf, dataInicial, dataFinal, pagina = 1, tamanho = CFG.CONTRATOS_PAGE }) {
+    const qs = new URLSearchParams();
+    qs.set("dataInicial", dataInicial);
+    qs.set("dataFinal", dataFinal);
+    if (uf) qs.set("uf", uf);
+    qs.set("pagina", String(pagina));
+    qs.set("tamanhoPagina", String(tamanho));
+    const { data } = await pncpFetch("/consulta/v1/contratos?" + qs.toString());
+    return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
+  },
   async propostasAbertas({ modalidade, uf, municipioIbge, pagina = 1 }) {
     const qs = new URLSearchParams();
     qs.set("dataFinal", ymd(daysAgo(0)));
@@ -3016,15 +3028,17 @@ function buildCompetitors() {
   marketState.gathered.forEach((g) => g.itens.forEach(({ item, venc }) => {
     if (!(venc && venc.fornecedor)) return;
     const key = (venc.ni || venc.fornecedor).toString();
-    if (!comp[key]) comp[key] = { nome: venc.fornecedor, ni: venc.ni || "", itens: 0, total: 0, lic: new Set(), ufs: new Set(), exemplos: [] };
+    if (!comp[key]) comp[key] = { nome: venc.fornecedor, ni: venc.ni || "", itens: 0, total: 0, lic: new Set(), ufs: new Set(), muns: {}, exemplos: [] };
     const c = comp[key];
     c.itens++;
     if (venc.vTot != null && isFinite(venc.vTot)) c.total += Number(venc.vTot);
     if (g.c.numeroControlePNCP) c.lic.add(g.c.numeroControlePNCP);
-    const uf = (g.c.unidadeOrgao || {}).ufSigla; if (uf) c.ufs.add(uf);
-    if (c.exemplos.length < 8) c.exemplos.push({ desc: item.descricao || item.materialOuServicoNome || "—", v: venc.vUnit, orgao: (g.c.orgaoEntidade || {}).razaoSocial || "", mun: (g.c.unidadeOrgao || {}).municipioNome || "" });
+    const uo = g.c.unidadeOrgao || {};
+    const uf = uo.ufSigla; if (uf) c.ufs.add(uf);
+    const mun = uo.municipioNome; if (mun) c.muns[mun] = (c.muns[mun] || 0) + 1;
+    if (c.exemplos.length < 8) c.exemplos.push({ desc: item.descricao || item.materialOuServicoNome || "—", v: venc.vUnit, orgao: (g.c.orgaoEntidade || {}).razaoSocial || "", mun: mun || "" });
   }));
-  return Object.values(comp).map((c) => { c.licCount = c.lic.size; c.ufCount = c.ufs.size; c.ticket = c.itens ? c.total / c.itens : 0; return c; }).sort((a, b) => b.total - a.total);
+  return Object.values(comp).map((c) => { c.licCount = c.lic.size; c.ufCount = c.ufs.size; c.munCount = Object.keys(c.muns).length; c.ticket = c.itens ? c.total / c.itens : 0; return c; }).sort((a, b) => b.total - a.total);
 }
 function renderCompetitors() {
   const comps = buildCompetitors();
@@ -3046,13 +3060,98 @@ function renderCompetitors() {
     tb.appendChild(tr);
     const det = el("tr", { class: "comp-detail" });
     det.style.display = "none";
+    const scopeMun = state.munNome || "";
+    const munsArr = Object.keys(c.muns).sort((a, b) => c.muns[b] - c.muns[a]);
+    const munsHtml = munsArr.map((m) => {
+      const same = scopeMun && normTxt(m) === normTxt(scopeMun);
+      return '<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;border-radius:999px;font-size:0.76rem;' +
+        (same ? 'background:rgba(52,211,153,0.16);color:var(--green);border:1px solid rgba(52,211,153,0.35);font-weight:600;' : 'background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border);') +
+        '">' + esc(m) + ' · ' + c.muns[m] + (same ? ' (mesmo município)' : '') + '</span>';
+    }).join("");
+    const validCnpj = c.ni && String(c.ni).replace(/\D/g, "").length === 14;
+    const targetUF = state.uf || (c.ufCount === 1 ? Array.from(c.ufs)[0] : "");
     det.innerHTML = '<td colspan="7"><div class="cd-inner">' +
+      '<div style="border-top:none;"><b style="color:var(--text);">Municípios no escopo pesquisado:</b><br>' + (munsHtml || '<span style="color:var(--muted);">—</span>') + '</div>' +
+      '<div><b style="color:var(--text);">Itens vencidos (amostra):</b></div>' +
       c.exemplos.map((e) => '<div>' + esc(e.desc.slice(0, 80)) + ' — <b style="color:var(--gold);">' + fmtBRL2(e.v) + '</b> <span style="color:var(--muted);">· ' + esc(e.orgao.slice(0, 40)) + (e.mun ? " (" + esc(e.mun) + ")" : "") + '</span></div>').join("") +
-      '</div></td>';
+      '<div style="border-top:none;padding-top:10px;">' +
+        (validCnpj && targetUF
+          ? '<button class="btn-ghost mkt-foot-btn" style="font-size:0.82rem;padding:7px 12px;">🔎 Ver atuação em ' + esc(targetUF) + ' (contratos desde 2023)</button>'
+          : '<span style="color:var(--muted);font-size:0.8rem;">' + (!validCnpj ? 'CNPJ do fornecedor indisponível para varredura estadual.' : 'Selecione uma UF na busca para varrer a atuação estadual.') + '</span>') +
+      '</div>' +
+      '<div class="mkt-foot-result"></div>' +
+    '</div></td>';
     tb.appendChild(det);
     tr.querySelector(".lnk").onclick = () => { det.style.display = det.style.display === "none" ? "" : "none"; };
+    const fb = det.querySelector(".mkt-foot-btn");
+    if (fb) fb.onclick = () => loadFootprint(c, targetUF, fb, det.querySelector(".mkt-foot-result"));
   });
 }
+// ---- Nível 2: atuação do fornecedor no estado (varredura de /consulta/v1/contratos) ----
+async function loadFootprint(comp, uf, btn, container) {
+  if (!uf) { container.innerHTML = '<p style="color:var(--muted);font-size:0.82rem;">Sem UF para varrer.</p>'; return; }
+  if (!comp._foot) comp._foot = { page: 0, totalPaginas: null, scanned: 0, muns: {}, total: 0, orgaos: new Set(), matches: 0, done: false };
+  const f = comp._foot;
+  const cnpj = String(comp.ni).replace(/\D/g, "");
+  const di = "20230101", df = ymd(daysAgo(0));
+  btn.disabled = true;
+  const startPage = f.page + 1, endPage = startPage + CFG.CONTRATOS_SCAN_PAGES - 1;
+  container.innerHTML = '<div style="margin-top:10px;font-size:0.82rem;color:var(--text-dim);" id="footProgTxt">Varrendo contratos de ' + esc(uf) + '…</div><div class="progress"><i id="footProgBar"></i></div>';
+  try {
+    for (let p = startPage; p <= endPage; p++) {
+      const r = await pncpService.contratos({ uf: uf, dataInicial: di, dataFinal: df, pagina: p });
+      const arr = r.data || r.contratos || [];
+      if (f.totalPaginas == null) f.totalPaginas = r.totalPaginas || Math.ceil((r.totalRegistros || 0) / CFG.CONTRATOS_PAGE) || 1;
+      arr.forEach((ct) => {
+        const uo = ct.unidadeOrgao || {};
+        const cUf = uo.ufSigla || ct.ufSigla || "";
+        if (uf && cUf && cUf !== uf) return; // segurança caso o servidor não filtre por UF
+        const ni = String(ct.niFornecedor || (ct.fornecedor || {}).ni || ct.cnpjCpfFornecedor || "").replace(/\D/g, "");
+        if (ni !== cnpj) return;
+        f.matches++;
+        const mun = uo.municipioNome || (ct.municipio || {}).nome || "—";
+        const val = Number(ct.valorGlobal || ct.valorInicial || 0) || 0;
+        if (!f.muns[mun]) f.muns[mun] = { n: 0, v: 0 };
+        f.muns[mun].n++; f.muns[mun].v += val; f.total += val;
+        const org = (ct.orgaoEntidade || {}).razaoSocial; if (org) f.orgaos.add(org);
+      });
+      f.page = p; f.scanned += arr.length;
+      const txt = $("#footProgTxt"), bar = $("#footProgBar");
+      if (txt) txt.textContent = "Varrendo " + esc(uf) + "… página " + p + (f.totalPaginas ? " de ~" + f.totalPaginas : "") + " · " + f.matches + " contrato(s) do CNPJ até agora";
+      if (bar && f.totalPaginas) bar.style.width = Math.min(100, p / f.totalPaginas * 100) + "%";
+      if (f.totalPaginas && p >= f.totalPaginas) { f.done = true; break; }
+      if (!arr.length) { f.done = true; break; }
+    }
+    renderFootprint(comp, uf, container);
+  } catch (e) {
+    container.innerHTML = '<p style="color:var(--red);font-size:0.82rem;margin-top:10px;">Falha na varredura: ' + esc(e && e.message ? e.message : "erro") + '. O endpoint de contratos pode não aceitar filtro por UF — me avise para ajustar.</p>';
+  } finally { btn.disabled = false; }
+}
+function renderFootprint(comp, uf, container) {
+  const f = comp._foot;
+  const scopeMun = state.munNome || "";
+  const muns = Object.keys(f.muns).sort((a, b) => f.muns[b].v - f.muns[a].v);
+  const partial = !f.done;
+  let html = '<div class="sim-box" style="margin-top:12px;">';
+  if (f.matches === 0) {
+    html += '<div style="font-size:0.85rem;color:var(--text-dim);">Nenhum contrato deste CNPJ encontrado em <b>' + esc(uf) + '</b> nas ' + f.page + ' páginas varridas (' + fmtInt(f.scanned) + ' contratos analisados desde 01/2023).' + (partial ? ' A varredura ainda é parcial.' : '') + '</div>';
+  } else {
+    html += '<div style="font-size:0.88rem;"><b style="color:var(--green);">' + f.matches + '</b> contrato(s) em <b>' + muns.length + '</b> município(s) de <b>' + esc(uf) + '</b> · total <b style="color:var(--green);">' + fmtBRLCompact(f.total) + '</b> · ' + f.orgaos.size + ' órgão(s).</div>';
+    html += '<div style="margin-top:8px;">' + muns.map((m) => {
+      const same = scopeMun && normTxt(m) === normTxt(scopeMun);
+      return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--border);">' +
+        '<span style="' + (same ? 'color:var(--green);font-weight:600;' : 'color:var(--text);') + '">' + esc(m) + (same ? ' · mesmo município da busca' : '') + '</span>' +
+        '<span style="font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap;">' + f.muns[m].n + ' contr. · ' + fmtBRLCompact(f.muns[m].v) + '</span></div>';
+    }).join("") + '</div>';
+  }
+  html += '<div style="margin-top:10px;font-size:0.74rem;color:var(--muted);">Varredura ' + f.page + (f.totalPaginas ? ' de ~' + f.totalPaginas : '') + ' páginas · ' + fmtInt(f.scanned) + ' contratos analisados. Mostra onde a empresa <b>contratou</b> (vencedora); o PNCP não expõe participações perdidas.</div>';
+  if (partial) html += '<div style="margin-top:8px;"><button class="btn-ghost foot-more" style="font-size:0.8rem;padding:6px 11px;">Continuar varredura (+' + CFG.CONTRATOS_SCAN_PAGES + ' páginas)</button></div>';
+  html += '</div>';
+  container.innerHTML = html;
+  const more = container.querySelector(".foot-more");
+  if (more) more.onclick = () => loadFootprint(comp, uf, more, container);
+}
+
 function closeMarket() {
   $("#marketOverlay").classList.remove("open");
   if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
