@@ -1342,12 +1342,12 @@ const pncpService = {
     const { data } = await pncpFetch("/consulta/v1/contratacoes/publicacao?" + qs.toString());
     return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
   },
-  // Contratos publicados (consulta documentada) — usada na "atuação no estado" (nível 2).
-  async contratos({ uf, dataInicial, dataFinal, pagina = 1, tamanho = CFG.CONTRATOS_PAGE }) {
+  // Contratos publicados (consulta documentada) — filtra por ÓRGÃO (cnpjOrgao) e período ≤1 ano.
+  async contratos({ cnpjOrgao, dataInicial, dataFinal, pagina = 1, tamanho = CFG.CONTRATOS_PAGE }) {
     const qs = new URLSearchParams();
     qs.set("dataInicial", dataInicial);
     qs.set("dataFinal", dataFinal);
-    if (uf) qs.set("uf", uf);
+    if (cnpjOrgao) qs.set("cnpjOrgao", String(cnpjOrgao).replace(/\D/g, ""));
     qs.set("pagina", String(pagina));
     qs.set("tamanhoPagina", String(tamanho));
     const { data } = await pncpFetch("/consulta/v1/contratos?" + qs.toString());
@@ -3028,17 +3028,20 @@ function buildCompetitors() {
   marketState.gathered.forEach((g) => g.itens.forEach(({ item, venc }) => {
     if (!(venc && venc.fornecedor)) return;
     const key = (venc.ni || venc.fornecedor).toString();
-    if (!comp[key]) comp[key] = { nome: venc.fornecedor, ni: venc.ni || "", itens: 0, total: 0, lic: new Set(), ufs: new Set(), muns: {}, exemplos: [] };
+    if (!comp[key]) comp[key] = { nome: venc.fornecedor, ni: venc.ni || "", itens: 0, total: 0, lic: new Set(), ufs: new Set(), muns: {}, orgaos: {}, exemplos: [] };
     const c = comp[key];
     c.itens++;
     if (venc.vTot != null && isFinite(venc.vTot)) c.total += Number(venc.vTot);
     if (g.c.numeroControlePNCP) c.lic.add(g.c.numeroControlePNCP);
     const uo = g.c.unidadeOrgao || {};
+    const oe = g.c.orgaoEntidade || {};
     const uf = uo.ufSigla; if (uf) c.ufs.add(uf);
     const mun = uo.municipioNome; if (mun) c.muns[mun] = (c.muns[mun] || 0) + 1;
-    if (c.exemplos.length < 8) c.exemplos.push({ desc: item.descricao || item.materialOuServicoNome || "—", v: venc.vUnit, orgao: (g.c.orgaoEntidade || {}).razaoSocial || "", mun: mun || "" });
+    const ocnpj = (oe.cnpj || "").replace(/\D/g, "");
+    if (ocnpj && !c.orgaos[ocnpj]) c.orgaos[ocnpj] = { nome: oe.razaoSocial || "", mun: mun || "", uf: uf || "" };
+    if (c.exemplos.length < 8) c.exemplos.push({ desc: item.descricao || item.materialOuServicoNome || "—", v: venc.vUnit, orgao: oe.razaoSocial || "", mun: mun || "" });
   }));
-  return Object.values(comp).map((c) => { c.licCount = c.lic.size; c.ufCount = c.ufs.size; c.munCount = Object.keys(c.muns).length; c.ticket = c.itens ? c.total / c.itens : 0; return c; }).sort((a, b) => b.total - a.total);
+  return Object.values(comp).map((c) => { c.licCount = c.lic.size; c.ufCount = c.ufs.size; c.munCount = Object.keys(c.muns).length; c.orgCount = Object.keys(c.orgaos).length; c.ticket = c.itens ? c.total / c.itens : 0; return c; }).sort((a, b) => b.total - a.total);
 }
 function renderCompetitors() {
   const comps = buildCompetitors();
@@ -3069,74 +3072,94 @@ function renderCompetitors() {
         '">' + esc(m) + ' · ' + c.muns[m] + (same ? ' (mesmo município)' : '') + '</span>';
     }).join("");
     const validCnpj = c.ni && String(c.ni).replace(/\D/g, "").length === 14;
-    const targetUF = state.uf || (c.ufCount === 1 ? Array.from(c.ufs)[0] : "");
+    const nOrg = Object.keys(c.orgaos).length;
     det.innerHTML = '<td colspan="7"><div class="cd-inner">' +
       '<div style="border-top:none;"><b style="color:var(--text);">Municípios no escopo pesquisado:</b><br>' + (munsHtml || '<span style="color:var(--muted);">—</span>') + '</div>' +
       '<div><b style="color:var(--text);">Itens vencidos (amostra):</b></div>' +
       c.exemplos.map((e) => '<div>' + esc(e.desc.slice(0, 80)) + ' — <b style="color:var(--gold);">' + fmtBRL2(e.v) + '</b> <span style="color:var(--muted);">· ' + esc(e.orgao.slice(0, 40)) + (e.mun ? " (" + esc(e.mun) + ")" : "") + '</span></div>').join("") +
       '<div style="border-top:none;padding-top:10px;">' +
-        (validCnpj && targetUF
-          ? '<button class="btn-ghost mkt-foot-btn" style="font-size:0.82rem;padding:7px 12px;">🔎 Ver atuação em ' + esc(targetUF) + ' (contratos desde 2023)</button>'
-          : '<span style="color:var(--muted);font-size:0.8rem;">' + (!validCnpj ? 'CNPJ do fornecedor indisponível para varredura estadual.' : 'Selecione uma UF na busca para varrer a atuação estadual.') + '</span>') +
+        (validCnpj && nOrg
+          ? '<button class="btn-ghost mkt-foot-btn" style="font-size:0.82rem;padding:7px 12px;">🔎 Histórico deste fornecedor nos ' + nOrg + ' órgão(s) da busca (contratos 2023 → hoje)</button>'
+          : '<span style="color:var(--muted);font-size:0.8rem;">' + (!validCnpj ? 'CNPJ do fornecedor indisponível para o histórico.' : 'Órgão comprador não identificado para consulta de contratos.') + '</span>') +
       '</div>' +
       '<div class="mkt-foot-result"></div>' +
     '</div></td>';
     tb.appendChild(det);
     tr.querySelector(".lnk").onclick = () => { det.style.display = det.style.display === "none" ? "" : "none"; };
     const fb = det.querySelector(".mkt-foot-btn");
-    if (fb) fb.onclick = () => loadFootprint(c, targetUF, fb, det.querySelector(".mkt-foot-result"));
+    if (fb) fb.onclick = () => loadFootprint(c, fb, det.querySelector(".mkt-foot-result"));
   });
 }
-// ---- Nível 2: atuação do fornecedor no estado (varredura de /consulta/v1/contratos) ----
-async function loadFootprint(comp, uf, btn, container) {
-  if (!uf) { container.innerHTML = '<p style="color:var(--muted);font-size:0.82rem;">Sem UF para varrer.</p>'; return; }
-  if (!comp._foot) comp._foot = { page: 0, totalPaginas: null, scanned: 0, muns: {}, total: 0, orgaos: new Set(), matches: 0, done: false };
-  const f = comp._foot;
+// ---- Nível 2: histórico do fornecedor nos órgãos da busca (consulta /contratos por órgão, janelas anuais) ----
+function yearWindows(fromYear) {
+  const now = new Date(), cy = now.getFullYear(), wins = [];
+  for (let y = fromYear; y <= cy; y++) {
+    const di = y + "0101";
+    const df = (y < cy) ? (y + "1231") : ymd(now);
+    wins.push({ di, df, y });
+  }
+  return wins;
+}
+const FOOT_BUDGET = 40; // requisições por execução (clique)
+
+async function loadFootprint(comp, btn, container) {
   const cnpj = String(comp.ni).replace(/\D/g, "");
-  const di = "20230101", df = ymd(daysAgo(0));
+  if (!comp._foot) {
+    // monta a fila de pares (órgão × janela anual) uma única vez
+    const orgs = Object.keys(comp.orgaos).slice(0, 12);
+    const wins = yearWindows(2023);
+    const pairs = [];
+    orgs.forEach((o) => wins.forEach((w) => pairs.push({ org: o, di: w.di, df: w.df })));
+    comp._foot = { pairs, pi: 0, page: 1, muns: {}, total: 0, matches: 0, orgaos: new Set(), seen: new Set(), scanned: 0, done: pairs.length === 0 };
+  }
+  const f = comp._foot;
   btn.disabled = true;
-  const startPage = f.page + 1, endPage = startPage + CFG.CONTRATOS_SCAN_PAGES - 1;
-  container.innerHTML = '<div style="margin-top:10px;font-size:0.82rem;color:var(--text-dim);" id="footProgTxt">Varrendo contratos de ' + esc(uf) + '…</div><div class="progress"><i id="footProgBar"></i></div>';
+  container.innerHTML = '<div style="margin-top:10px;font-size:0.82rem;color:var(--text-dim);" id="footProgTxt">Consultando contratos…</div><div class="progress"><i id="footProgBar"></i></div>';
+  let used = 0;
   try {
-    for (let p = startPage; p <= endPage; p++) {
-      const r = await pncpService.contratos({ uf: uf, dataInicial: di, dataFinal: df, pagina: p });
+    while (used < FOOT_BUDGET && f.pi < f.pairs.length) {
+      const pair = f.pairs[f.pi];
+      const r = await pncpService.contratos({ cnpjOrgao: pair.org, dataInicial: pair.di, dataFinal: pair.df, pagina: f.page });
+      used++;
       const arr = r.data || r.contratos || [];
-      if (f.totalPaginas == null) f.totalPaginas = r.totalPaginas || Math.ceil((r.totalRegistros || 0) / CFG.CONTRATOS_PAGE) || 1;
+      const totPag = r.totalPaginas || Math.ceil((r.totalRegistros || 0) / CFG.CONTRATOS_PAGE) || 1;
       arr.forEach((ct) => {
-        const uo = ct.unidadeOrgao || {};
-        const cUf = uo.ufSigla || ct.ufSigla || "";
-        if (uf && cUf && cUf !== uf) return; // segurança caso o servidor não filtre por UF
         const ni = String(ct.niFornecedor || (ct.fornecedor || {}).ni || ct.cnpjCpfFornecedor || "").replace(/\D/g, "");
         if (ni !== cnpj) return;
+        const cid = ct.numeroControlePNCP || (String(ct.numeroControlePncpCompra || "") + "-" + String(ct.numeroContratoEmpenho || ct.sequencialContrato || ct.numeroContrato || ""));
+        if (cid && f.seen.has(cid)) return; // evita contagem dupla
+        if (cid) f.seen.add(cid);
         f.matches++;
-        const mun = uo.municipioNome || (ct.municipio || {}).nome || "—";
+        const uo = ct.unidadeOrgao || {};
+        const mun = uo.municipioNome || (comp.orgaos[pair.org] || {}).mun || "—";
         const val = Number(ct.valorGlobal || ct.valorInicial || 0) || 0;
         if (!f.muns[mun]) f.muns[mun] = { n: 0, v: 0 };
         f.muns[mun].n++; f.muns[mun].v += val; f.total += val;
-        const org = (ct.orgaoEntidade || {}).razaoSocial; if (org) f.orgaos.add(org);
+        f.orgaos.add(pair.org);
       });
-      f.page = p; f.scanned += arr.length;
+      f.scanned += arr.length;
+      // avança página dentro do par, ou passa ao próximo par
+      if (f.page >= totPag || arr.length === 0) { f.pi++; f.page = 1; } else { f.page++; }
       const txt = $("#footProgTxt"), bar = $("#footProgBar");
-      if (txt) txt.textContent = "Varrendo " + esc(uf) + "… página " + p + (f.totalPaginas ? " de ~" + f.totalPaginas : "") + " · " + f.matches + " contrato(s) do CNPJ até agora";
-      if (bar && f.totalPaginas) bar.style.width = Math.min(100, p / f.totalPaginas * 100) + "%";
-      if (f.totalPaginas && p >= f.totalPaginas) { f.done = true; break; }
-      if (!arr.length) { f.done = true; break; }
+      if (txt) txt.textContent = "Consultando contratos… " + f.pi + "/" + f.pairs.length + " janelas · " + f.matches + " contrato(s) do CNPJ";
+      if (bar) bar.style.width = Math.min(100, f.pi / f.pairs.length * 100) + "%";
     }
-    renderFootprint(comp, uf, container);
+    if (f.pi >= f.pairs.length) f.done = true;
+    renderFootprint(comp, container);
   } catch (e) {
-    container.innerHTML = '<p style="color:var(--red);font-size:0.82rem;margin-top:10px;">Falha na varredura: ' + esc(e && e.message ? e.message : "erro") + '. O endpoint de contratos pode não aceitar filtro por UF — me avise para ajustar.</p>';
+    container.innerHTML = '<p style="color:var(--red);font-size:0.82rem;margin-top:10px;">Falha na consulta: ' + esc(e && e.message ? e.message : "erro") + '.</p>';
   } finally { btn.disabled = false; }
 }
-function renderFootprint(comp, uf, container) {
+function renderFootprint(comp, container) {
   const f = comp._foot;
   const scopeMun = state.munNome || "";
   const muns = Object.keys(f.muns).sort((a, b) => f.muns[b].v - f.muns[a].v);
   const partial = !f.done;
   let html = '<div class="sim-box" style="margin-top:12px;">';
   if (f.matches === 0) {
-    html += '<div style="font-size:0.85rem;color:var(--text-dim);">Nenhum contrato deste CNPJ encontrado em <b>' + esc(uf) + '</b> nas ' + f.page + ' páginas varridas (' + fmtInt(f.scanned) + ' contratos analisados desde 01/2023).' + (partial ? ' A varredura ainda é parcial.' : '') + '</div>';
+    html += '<div style="font-size:0.85rem;color:var(--text-dim);">Nenhum contrato deste CNPJ encontrado nos órgãos da busca até aqui (' + fmtInt(f.scanned) + ' contratos analisados, ' + f.pi + '/' + f.pairs.length + ' janelas).' + (partial ? ' Consulta ainda parcial.' : '') + '</div>';
   } else {
-    html += '<div style="font-size:0.88rem;"><b style="color:var(--green);">' + f.matches + '</b> contrato(s) em <b>' + muns.length + '</b> município(s) de <b>' + esc(uf) + '</b> · total <b style="color:var(--green);">' + fmtBRLCompact(f.total) + '</b> · ' + f.orgaos.size + ' órgão(s).</div>';
+    html += '<div style="font-size:0.88rem;"><b style="color:var(--green);">' + f.matches + '</b> contrato(s) em <b>' + muns.length + '</b> município(s) · total <b style="color:var(--green);">' + fmtBRLCompact(f.total) + '</b> · ' + f.orgaos.size + ' órgão(s).</div>';
     html += '<div style="margin-top:8px;">' + muns.map((m) => {
       const same = scopeMun && normTxt(m) === normTxt(scopeMun);
       return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--border);">' +
@@ -3144,12 +3167,12 @@ function renderFootprint(comp, uf, container) {
         '<span style="font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap;">' + f.muns[m].n + ' contr. · ' + fmtBRLCompact(f.muns[m].v) + '</span></div>';
     }).join("") + '</div>';
   }
-  html += '<div style="margin-top:10px;font-size:0.74rem;color:var(--muted);">Varredura ' + f.page + (f.totalPaginas ? ' de ~' + f.totalPaginas : '') + ' páginas · ' + fmtInt(f.scanned) + ' contratos analisados. Mostra onde a empresa <b>contratou</b> (vencedora); o PNCP não expõe participações perdidas.</div>';
-  if (partial) html += '<div style="margin-top:8px;"><button class="btn-ghost foot-more" style="font-size:0.8rem;padding:6px 11px;">Continuar varredura (+' + CFG.CONTRATOS_SCAN_PAGES + ' páginas)</button></div>';
+  html += '<div style="margin-top:10px;font-size:0.74rem;color:var(--muted);">' + f.pi + ' de ' + f.pairs.length + ' janelas (órgão × ano) analisadas · ' + fmtInt(f.scanned) + ' contratos. Mostra onde a empresa <b>contratou/venceu</b> nos órgãos da sua busca — o PNCP não permite varrer um estado inteiro por fornecedor.</div>';
+  if (partial) html += '<div style="margin-top:8px;"><button class="btn-ghost foot-more" style="font-size:0.8rem;padding:6px 11px;">Continuar consulta (+' + FOOT_BUDGET + ' janelas)</button></div>';
   html += '</div>';
   container.innerHTML = html;
   const more = container.querySelector(".foot-more");
-  if (more) more.onclick = () => loadFootprint(comp, uf, more, container);
+  if (more) more.onclick = () => loadFootprint(comp, more, container);
 }
 
 function closeMarket() {
