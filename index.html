@@ -947,7 +947,7 @@ const CFG = {
   PNCP_API: "https://pncp.gov.br/api",          // base do PNCP (consulta + pncp)
   IBGE_API: "https://servicodados.ibge.gov.br/api/v1/localidades",
   LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts", FAVS: "pncp_favs", ANALISE: "pncp_analise_endpoint" },
-  HTTP_TIMEOUT: 18000,
+  HTTP_TIMEOUT: 25000,
   PAGE_SIZE: 20,
   CONTRATOS_PAGE: 50,            // tamanho de página da consulta de contratos (nível 2)
   CONTRATOS_SCAN_PAGES: 25,      // páginas varridas por execução (teto p/ não travar o navegador)
@@ -1240,19 +1240,23 @@ function setStrat(id, status) {
   if (status) node.classList.add(status);
 }
 
-async function timedFetch(url, opts = {}) {
+async function timedFetch(url, opts = {}, timeout) {
   const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), CFG.HTTP_TIMEOUT);
+  const to = setTimeout(() => ac.abort(), timeout || CFG.HTTP_TIMEOUT);
   try {
     const res = await fetch(url, { ...opts, signal: ac.signal, headers: { Accept: "application/json", ...(opts.headers || {}) } });
     return res;
+  } catch (e) {
+    if (ac.signal.aborted) throw new Error("Tempo limite excedido (proxy/PNCP lento)");
+    throw e;
   } finally {
     clearTimeout(to);
   }
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // path ex.: "/consulta/v1/contratacoes/publicacao?dataInicial=..."
-async function pncpFetch(path) {
+async function pncpFetch(path, opts = {}) {
   const target = CFG.PNCP_API + path;
   const cacheKey = "pncp:" + path;
   const cached = state.cache.get(cacheKey);
@@ -1273,7 +1277,7 @@ async function pncpFetch(path) {
   let lastErr = null;
   for (const a of attempts) {
     try {
-      const res = await timedFetch(a.url);
+      const res = await timedFetch(a.url, {}, opts.timeout);
       if (res.status === 204) { state.cache.set(cacheKey, { t: Date.now(), v: { data: [], totalRegistros: 0, totalPaginas: 0 } }); setStrat(a.strat, "ok"); state.lastStrategy = a.name; updateSrcPill("ok"); return { data: { data: [], totalRegistros: 0, totalPaginas: 0 }, strategy: a.name }; }
       if (!res.ok) throw new Error("HTTP " + res.status);
       const json = await res.json();
@@ -1350,7 +1354,7 @@ const pncpService = {
     if (cnpjOrgao) qs.set("cnpjOrgao", String(cnpjOrgao).replace(/\D/g, ""));
     qs.set("pagina", String(pagina));
     qs.set("tamanhoPagina", String(tamanho));
-    const { data } = await pncpFetch("/consulta/v1/contratos?" + qs.toString());
+    const { data } = await pncpFetch("/consulta/v1/contratos?" + qs.toString(), { timeout: 35000 });
     return data || { data: [], totalRegistros: 0, totalPaginas: 0 };
   },
   async propostasAbertas({ modalidade, uf, municipioIbge, pagina = 1 }) {
@@ -3100,17 +3104,16 @@ function yearWindows(fromYear) {
   }
   return wins;
 }
-const FOOT_BUDGET = 40; // requisições por execução (clique)
+const FOOT_BUDGET = 24; // requisições por execução (clique)
 
 async function loadFootprint(comp, btn, container) {
   const cnpj = String(comp.ni).replace(/\D/g, "");
   if (!comp._foot) {
-    // monta a fila de pares (órgão × janela anual) uma única vez
     const orgs = Object.keys(comp.orgaos).slice(0, 12);
     const wins = yearWindows(2023);
     const pairs = [];
     orgs.forEach((o) => wins.forEach((w) => pairs.push({ org: o, di: w.di, df: w.df })));
-    comp._foot = { pairs, pi: 0, page: 1, muns: {}, total: 0, matches: 0, orgaos: new Set(), seen: new Set(), scanned: 0, done: pairs.length === 0 };
+    comp._foot = { pairs, pi: 0, page: 1, muns: {}, total: 0, matches: 0, orgaos: new Set(), seen: new Set(), scanned: 0, fails: 0, done: pairs.length === 0 };
   }
   const f = comp._foot;
   btn.disabled = true;
@@ -3119,7 +3122,18 @@ async function loadFootprint(comp, btn, container) {
   try {
     while (used < FOOT_BUDGET && f.pi < f.pairs.length) {
       const pair = f.pairs[f.pi];
-      const r = await pncpService.contratos({ cnpjOrgao: pair.org, dataInicial: pair.di, dataFinal: pair.df, pagina: f.page });
+      let r = null;
+      // tenta a janela; em caso de timeout/erro, 1 retentativa e depois pula a janela
+      for (let attempt = 0; attempt < 2 && !r; attempt++) {
+        try {
+          r = await pncpService.contratos({ cnpjOrgao: pair.org, dataInicial: pair.di, dataFinal: pair.df, pagina: f.page });
+        } catch (err) {
+          used++;
+          if (attempt === 1) { f.fails++; r = null; }
+          else await sleep(600);
+        }
+      }
+      if (!r) { f.pi++; f.page = 1; await sleep(120); continue; } // pula janela problemática
       used++;
       const arr = r.data || r.contratos || [];
       const totPag = r.totalPaginas || Math.ceil((r.totalRegistros || 0) / CFG.CONTRATOS_PAGE) || 1;
@@ -3127,7 +3141,7 @@ async function loadFootprint(comp, btn, container) {
         const ni = String(ct.niFornecedor || (ct.fornecedor || {}).ni || ct.cnpjCpfFornecedor || "").replace(/\D/g, "");
         if (ni !== cnpj) return;
         const cid = ct.numeroControlePNCP || (String(ct.numeroControlePncpCompra || "") + "-" + String(ct.numeroContratoEmpenho || ct.sequencialContrato || ct.numeroContrato || ""));
-        if (cid && f.seen.has(cid)) return; // evita contagem dupla
+        if (cid && f.seen.has(cid)) return;
         if (cid) f.seen.add(cid);
         f.matches++;
         const uo = ct.unidadeOrgao || {};
@@ -3138,16 +3152,17 @@ async function loadFootprint(comp, btn, container) {
         f.orgaos.add(pair.org);
       });
       f.scanned += arr.length;
-      // avança página dentro do par, ou passa ao próximo par
       if (f.page >= totPag || arr.length === 0) { f.pi++; f.page = 1; } else { f.page++; }
       const txt = $("#footProgTxt"), bar = $("#footProgBar");
-      if (txt) txt.textContent = "Consultando contratos… " + f.pi + "/" + f.pairs.length + " janelas · " + f.matches + " contrato(s) do CNPJ";
+      if (txt) txt.textContent = "Consultando contratos… " + f.pi + "/" + f.pairs.length + " janelas · " + f.matches + " contrato(s) do CNPJ" + (f.fails ? " · " + f.fails + " falha(s)" : "");
       if (bar) bar.style.width = Math.min(100, f.pi / f.pairs.length * 100) + "%";
+      await sleep(120); // ritmo suave para não estourar o proxy
     }
     if (f.pi >= f.pairs.length) f.done = true;
     renderFootprint(comp, container);
   } catch (e) {
-    container.innerHTML = '<p style="color:var(--red);font-size:0.82rem;margin-top:10px;">Falha na consulta: ' + esc(e && e.message ? e.message : "erro") + '.</p>';
+    if (f.matches || f.scanned) { renderFootprint(comp, container); }
+    else container.innerHTML = '<p style="color:var(--red);font-size:0.82rem;margin-top:10px;">Falha na consulta: ' + esc(e && e.message ? e.message : "erro") + '. Verifique o proxy (⚙) e tente de novo.</p>';
   } finally { btn.disabled = false; }
 }
 function renderFootprint(comp, container) {
@@ -3167,7 +3182,7 @@ function renderFootprint(comp, container) {
         '<span style="font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap;">' + f.muns[m].n + ' contr. · ' + fmtBRLCompact(f.muns[m].v) + '</span></div>';
     }).join("") + '</div>';
   }
-  html += '<div style="margin-top:10px;font-size:0.74rem;color:var(--muted);">' + f.pi + ' de ' + f.pairs.length + ' janelas (órgão × ano) analisadas · ' + fmtInt(f.scanned) + ' contratos. Mostra onde a empresa <b>contratou/venceu</b> nos órgãos da sua busca — o PNCP não permite varrer um estado inteiro por fornecedor.</div>';
+  html += '<div style="margin-top:10px;font-size:0.74rem;color:var(--muted);">' + f.pi + ' de ' + f.pairs.length + ' janelas (órgão × ano) analisadas · ' + fmtInt(f.scanned) + ' contratos' + (f.fails ? ' · ' + f.fails + ' janela(s) pulada(s) por lentidão' : '') + '. Mostra onde a empresa <b>contratou/venceu</b> nos órgãos da sua busca — o PNCP não permite varrer um estado inteiro por fornecedor.</div>';
   if (partial) html += '<div style="margin-top:8px;"><button class="btn-ghost foot-more" style="font-size:0.8rem;padding:6px 11px;">Continuar consulta (+' + FOOT_BUDGET + ' janelas)</button></div>';
   html += '</div>';
   container.innerHTML = html;
