@@ -395,6 +395,21 @@
   .gloss-block p { font-size: 0.92rem; line-height: 1.55; color: var(--text-dim); }
   .gloss-block.simple p { color: var(--text); }
 
+  /* como usar */
+  .btn-howto { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(45,212,191,0.28); transition: 0.14s; }
+  .btn-howto:hover { background: rgba(45,212,191,0.18); border-color: var(--accent); }
+  @media (max-width: 560px) { .howto-label { display: none; } .btn-howto { padding: 9px; } }
+  .help-grid { display: grid; gap: 12px; }
+  .help-card { display: flex; gap: 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-2); }
+  .help-num { flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; background: var(--accent-soft); color: var(--accent); }
+  .help-card h4 { font-size: 0.98rem; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+  .help-card p { font-size: 0.86rem; line-height: 1.55; color: var(--text-dim); }
+  .help-card p b { color: var(--text); }
+  .help-card .hk { display: inline-block; padding: 1px 7px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border); font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+  .help-note { margin-top: 4px; padding: 13px 16px; border-radius: 12px; background: rgba(251,155,58,0.08); border: 1px solid rgba(251,155,58,0.28); font-size: 0.85rem; line-height: 1.55; color: var(--text-dim); }
+  .help-note b { color: var(--amber); }
+  .help-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
+
   /* ============================================================
      SEARCH PANEL
      ============================================================ */
@@ -669,6 +684,63 @@
     .timeline { overflow-x: auto; padding-bottom: 10px; }
     .tl-step { min-width: 84px; }
   }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 14px; }
+    /* cabeçalho compacto */
+    .topbar-inner { padding: 11px 14px; gap: 9px; }
+    .brand p { display: none; }
+    .brand h1 { font-size: 0.96rem; }
+    .brand .mark { width: 38px; height: 38px; }
+    .src-pill { display: none; }
+    .icon-btn { width: 38px; height: 38px; }
+    .btn-howto { padding: 8px 11px; }
+    /* hero */
+    .hero { padding: 30px 0 14px; }
+    .hero p.lede { font-size: 0.96rem; }
+    /* filtros: tudo em coluna única e fonte 16px (evita zoom no iOS) */
+    .filters { grid-template-columns: 1fr; gap: 12px; }
+    .field.c2, .field.c3, .field.c4, .field.c12 { grid-column: 1 / -1; }
+    .field input, .field select, .combo input, .filters input, .filters select { font-size: 16px; }
+    .btn-primary { grid-column: 1 / -1; }
+    /* resultados em coluna única (evita overflow horizontal dos cards) */
+    .card-grid { grid-template-columns: 1fr; }
+    .results-bar h3 { font-size: 1.08rem; }
+    /* modais ocupam quase toda a tela */
+    .modal-overlay { padding: 12px 9px; }
+    .modal { border-radius: 18px; }
+    .modal-head { padding: 20px 16px 16px; }
+    .modal-close { top: 13px; right: 13px; width: 34px; height: 34px; }
+    .modal-head h3 { font-size: 1.1rem; padding-right: 42px; }
+    .modal-body { padding: 18px 15px 22px; }
+    .modal-foot { padding: 15px; gap: 9px; }
+    .section-title { margin: 20px 0 12px; }
+    /* tabelas roláveis na horizontal */
+    .items-wrap { overflow-x: auto; }
+    .items-table { min-width: 460px; }
+    .preview-scroll table { min-width: 520px; }
+    /* glossário / mercado */
+    .gloss-overlay { padding: 14px; }
+    .gloss-modal .gm-head { padding: 18px 18px 13px; }
+    .gloss-modal .gm-body { padding: 16px 18px 20px; }
+    .mkt-tabs button { padding: 9px 13px; font-size: 0.82rem; }
+    .help-card { padding: 12px 13px; gap: 11px; }
+    .help-card h4 { font-size: 0.94rem; }
+    /* botões da barra de resultados não estouram */
+    .btn-save-alert { font-size: 0.8rem; padding: 8px 11px; }
+  }
+  @media (max-width: 400px) {
+    .wrap { padding: 0 11px; }
+    .brand .mark { width: 34px; height: 34px; }
+    .brand h1 { font-size: 0.9rem; }
+    .icon-btn { width: 36px; height: 36px; }
+    .hero h2 { font-size: 1.72rem; }
+    .modal-head h3 { font-size: 1.02rem; }
+    .modal-body { padding: 16px 13px 20px; }
+    .detail-grid { gap: 10px; }
+    .tl-node { width: 36px; height: 36px; }
+    .tl-step { min-width: 76px; }
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -686,6 +758,10 @@
       </div>
     </div>
     <div class="topbar-spacer"></div>
+    <button class="btn-howto" id="helpBtn" title="Guia rápido de uso">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      <span class="howto-label">Como usar</span>
+    </button>
     <div class="src-pill" id="srcPill" title="Status da conexão com a API do PNCP">
       <span class="src-dot" id="srcDot"></span><span id="srcText">Aguardando consulta</span>
     </div>
@@ -903,6 +979,76 @@
   <div class="modal" id="reportModal" style="max-width:920px;"></div>
 </div>
 
+<!-- ===================== COMO USAR (HELP) ===================== -->
+<div class="modal-overlay" id="helpOverlay" role="dialog" aria-modal="true">
+  <div class="modal" id="helpModal" style="max-width:760px;">
+    <div class="modal-head">
+      <button class="modal-close" id="helpClose" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div class="mh-badges"><span class="badge b-mode">Guia rápido</span></div>
+      <h3>Como usar o painel</h3>
+      <div class="mh-org">Encontre licitações públicas, entenda os detalhes e compare preços e concorrentes — em poucos cliques.</div>
+    </div>
+    <div class="modal-body">
+      <div class="help-grid">
+
+        <div class="help-card"><div class="help-num">1</div><div>
+          <h4>Buscar licitações</h4>
+          <p>Você tem dois jeitos, e pode combiná-los:<br>
+          • <b>Por palavra-chave</b> (ex.: <i>merenda</i>, <i>asfalto</i>): busca em todo o país.<br>
+          • <b>Por Estado e Município</b>: lista o que está sendo contratado naquele lugar.<br>
+          • <b>Os dois juntos</b>: escolha o município <i>e</i> digite a palavra — o painel filtra os registros daquele local pelo termo. Para vários termos, separe por vírgula.</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">2</div><div>
+          <h4>Refinar com filtros</h4>
+          <p>Ajuste <b>Modalidade</b> (pregão, dispensa…), <b>Período</b> (últimos dias) e <b>Situação</b> (recebendo propostas, em julgamento, encerradas). Não achou nada? Amplie o período ou use a modalidade <b>“Principais”</b>.</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">3</div><div>
+          <h4>Ver os detalhes</h4>
+          <p>Clique em qualquer card para abrir a licitação: linha do tempo (divulgação → propostas → julgamento → homologação), valores, itens, <b>vencedores</b> e <b>documentos</b> para baixar. As palavras técnicas aparecem <span class="gloss" data-term="edital">sublinhadas</span> — clique para ver a explicação simples.</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">4</div><div>
+          <h4>Alertas e favoritos</h4>
+          <p>Em uma busca por palavra-chave, clique em <b>Criar alerta</b> para o painel destacar o que for novo da próxima vez. Use a <b>estrela</b> nos cards para favoritar licitações e revê-las no ícone de estrela do topo.</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">5</div><div>
+          <h4>Análise por IA</h4>
+          <p>Dentro de uma licitação, clique em <b>Analisar IA</b> e anexe o edital em PDF. Você recebe um laudo com <b>riscos</b>, exigências de habilitação, prazos e pontos de atenção — em linguagem direta.</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">6</div><div>
+          <h4>Relatório e exportação</h4>
+          <p>No botão <b>Gerar relatório</b> você escolhe os campos e exporta tudo em <b>CSV ou Excel</b>, com estatísticas de preço — pronto para abrir no seu sistema ou planilha.</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">7</div><div>
+          <h4>Inteligência de mercado</h4>
+          <p>O botão <b>Inteligência de mercado</b> tem duas abas:<br>
+          • <b>Preços por item</b>: agrupa itens parecidos e mostra o preço de referência (mínimo, mediana, média, máximo). Em <i>Simular</i>, digite seu preço e veja se está competitivo.<br>
+          • <b>Concorrentes</b>: quem vence, em quais municípios e quanto. Expanda um fornecedor para ver o <b>histórico de contratos por órgão</b> (desde 2023).</p>
+        </div></div>
+
+        <div class="help-card"><div class="help-num">8</div><div>
+          <h4>Conexão de dados <span class="hk">⚙</span></h4>
+          <p>Os dados vêm do PNCP (governo federal). Para carregá-los, o painel usa um <b>proxy</b> configurado no ícone de engrenagem do topo. Se os indicadores ou a busca não carregarem, comece verificando ali.</p>
+        </div></div>
+
+      </div>
+
+      <div class="help-note">
+        <b>Deu “Tempo limite excedido”?</b> Em geral é o proxy/PNCP momentaneamente lento. Espere alguns segundos e tente de novo; se persistir, troque a modalidade “Principais” por uma única (ex.: Pregão - Eletrônico) para aliviar a consulta. A contagem de municípios vem do IBGE e funciona sempre, mesmo sem proxy.
+      </div>
+
+      <div class="help-foot">
+        <button class="btn-primary" id="helpDone" style="grid-column:unset;max-width:240px;">Entendi, começar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MARKET INTELLIGENCE OVERLAY ===================== -->
 <div class="modal-overlay" id="marketOverlay" role="dialog" aria-modal="true">
   <div class="modal" id="marketModal" style="max-width:960px;"></div>
@@ -946,7 +1092,7 @@
 const CFG = {
   PNCP_API: "https://pncp.gov.br/api",          // base do PNCP (consulta + pncp)
   IBGE_API: "https://servicodados.ibge.gov.br/api/v1/localidades",
-  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts", FAVS: "pncp_favs", ANALISE: "pncp_analise_endpoint" },
+  LS: { PROXY: "pncp_proxy_base", PUBLIC: "pncp_allow_public", ALERTS: "pncp_alerts", FAVS: "pncp_favs", ANALISE: "pncp_analise_endpoint", HELP: "pncp_help_seen" },
   HTTP_TIMEOUT: 25000,
   PAGE_SIZE: 20,
   CONTRATOS_PAGE: 50,            // tamanho de página da consulta de contratos (nível 2)
@@ -1707,31 +1853,40 @@ async function searchByKeyword(reset) {
 async function searchByMunicipio(reset) {
   const di = ymd(daysAgo(state.periodo)), df = ymd(daysAgo(0));
   const mods = state.modalidade === 0 ? MOD_PRINCIPAIS : [state.modalidade];
-  let total = 0, maxPaginas = 1, collected = [];
-  for (const mod of mods) {
-    const r = await pncpService.contratacoesPublicacao({
+  // chamadas por modalidade em PARALELO e tolerantes a falha: se uma modalidade
+  // demorar/falhar, as demais ainda retornam (antes, 1 timeout derrubava tudo).
+  const settled = await Promise.allSettled(mods.map((mod) =>
+    pncpService.contratacoesPublicacao({
       uf: state.uf, municipioIbge: state.munId, modalidade: mod,
       dataInicial: di, dataFinal: df, pagina: state.pagina
-    });
-    collected = collected.concat(r.data || []);
-    total += r.totalRegistros || 0;
-    maxPaginas = Math.max(maxPaginas, r.totalPaginas || 1);
-  }
+    })
+  ));
+  let total = 0, maxPaginas = 1, collected = [], ok = 0, lastErr = null;
+  settled.forEach((s) => {
+    if (s.status === "fulfilled") {
+      ok++;
+      const r = s.value;
+      collected = collected.concat(r.data || []);
+      total += r.totalRegistros || 0;
+      maxPaginas = Math.max(maxPaginas, r.totalPaginas || 1);
+    } else { lastErr = s.reason; }
+  });
+  if (ok === 0) throw (lastErr || new Error("Falha ao consultar o PNCP"));
+  state.partialMod = ok < mods.length;
   // filtro por palavra-chave no objeto (quando há termo + escopo de UF/município)
-  let matched = 0;
   if (state.keyword) {
     const terms = parseTerms(state.keyword).map(normTxt).filter(Boolean);
     collected = collected.filter((c) => {
       const o = normTxt(c.objetoCompra || "");
       return terms.some((t) => o.includes(t));
     });
-    matched = collected.length;
   }
   const seen = new Set(state.items.map((i) => i.numeroControlePNCP));
   collected.forEach((c) => { if (!seen.has(c.numeroControlePNCP)) { seen.add(c.numeroControlePNCP); state.items.push(c); } });
   state.items.sort((a, b) => new Date(b.dataPublicacaoPncp || 0) - new Date(a.dataPublicacaoPncp || 0));
   state.totalRegistros = state.keyword ? state.items.length : total;
   state.totalPaginas = maxPaginas;
+  if (state.partialMod) toast("Uma modalidade demorou e foi ignorada — resultado parcial. Refaça a busca para completar.");
 }
 
 function renderLoadingState() {
@@ -3195,6 +3350,13 @@ function closeMarket() {
   if (!$("#modalOverlay").classList.contains("open")) document.body.style.overflow = "";
 }
 
+function openHelp() { $("#helpOverlay").classList.add("open"); document.body.style.overflow = "hidden"; }
+function closeHelp() {
+  $("#helpOverlay").classList.remove("open");
+  try { localStorage.setItem(CFG.LS.HELP, "1"); } catch (e) {}
+  if (!$("#modalOverlay").classList.contains("open") && !$("#glossOverlay").classList.contains("open")) document.body.style.overflow = "";
+}
+
 /* ============================== 7. CONTROLLER ============================== */
 function init() {
   populateModalidades();
@@ -3232,6 +3394,10 @@ function init() {
   $("#analiseOverlay").addEventListener("click", (e) => { if (e.target.id === "analiseOverlay") closeAnalise(); });
   $("#reportOverlay").addEventListener("click", (e) => { if (e.target.id === "reportOverlay") closeReport(); });
   $("#marketOverlay").addEventListener("click", (e) => { if (e.target.id === "marketOverlay") closeMarket(); });
+  $("#helpBtn").onclick = openHelp;
+  $("#helpClose").onclick = closeHelp;
+  $("#helpDone").onclick = closeHelp;
+  $("#helpOverlay").addEventListener("click", (e) => { if (e.target.id === "helpOverlay") closeHelp(); });
   $("#glossOverlay").addEventListener("click", (e) => { if (e.target.id === "glossOverlay") closeGloss(); });
   document.addEventListener("click", (e) => {
     const g = e.target.closest(".gloss");
@@ -3239,7 +3405,9 @@ function init() {
   });
 
   $("#modalOverlay").addEventListener("click", (e) => { if (e.target.id === "modalOverlay") closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeGloss(); closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); closeMarket(); hideMunPop(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeGloss(); closeHelp(); closeModal(); closeDrawer(); closeAlerts(); closeFavs(); closeAnalise(); closeReport(); closeMarket(); hideMunPop(); } });
+
+  try { if (!localStorage.getItem(CFG.LS.HELP)) setTimeout(openHelp, 650); } catch (e) {}
 
   if (state.proxyBase) updateSrcPill("warn");
 }
